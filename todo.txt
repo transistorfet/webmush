@@ -1,0 +1,14 @@
+ 
+
+* a MUSH for the modern age... a more visually/intuitively interactive system, easily used on mobile
+
+* urls would signify where you are, and could be passed around for ... some reason
+* linking would be easy and integrated into the experience
+
+* A significant part would still be chat.  You would see a description of the room you're in, a list of people and objects, and a chat window of the current
+  content in the room.  You would see the exits in a visual format, with the option to click on them to travel.  Clicking on a person or object would allow you
+  to select an interaction
+* shortcut commands would still be included to make navigation easier for desktop users
+
+* have a profile page which makes it easy to change things about you
+

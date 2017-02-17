@@ -1,0 +1,16 @@
+{
+  "name": "webmush",
+  "version": "0.1.0",
+  "description": "A web-based Multi-User Shared Hallucination",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "transistor",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "express": "4.14.1",
+    "morgan": "1.8.1"
+  }
+}
