@@ -1,0 +1,113 @@
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    /*font-size: 11pt;
+    background-color: #C0F0C0;
+    text-color: #000000;*/
+
+    width: calc(100% - 6px);
+    margin: 0 3px;
+}
+
+input,
+select,
+button {
+    /*color: #fff;
+    background-color: #666666;*/
+    /*border: 1px solid black;*/
+    border-width: 1px;
+    padding: 1px 4px;
+}
+
+button:active {
+    background-color: #444444;
+}
+
+a:visited {
+    color: #4B1559;
+}
+
+#content {
+    float: left;
+    overflow: auto;
+    width: 100%;
+}
+
+#user-nav {
+    float: right;
+}
+
+#side-nav {
+}
+
+#world-chat {
+    width: 100%;
+}
+
+#world-logs {
+    font-size: 0.8em;
+    background-color: #DDDDDD;
+    border: 1px solid #235915;
+    border-radius: 6px;
+    padding: 4px;
+
+    overflow: auto;
+    height: 15em;
+}
+
+#world-input-div button {
+    margin-top: 4px;
+    width: 6ex;
+}
+
+#world-input {
+    width: calc(100% - 6ex);
+}
+
+#world-area {
+    margin: 0px auto;
+    /*border: 1px solid #235915;
+    border-radius: 6px;
+    padding: 4px;
+    margin-top: 4px;*/
+    margin-bottom: 1em;
+}
+
+@media screen and (min-width: 1000px) {
+    body {
+        width: 1000px;
+        margin: 0 auto;
+    }
+
+    #content {
+        /*width: 600px;*/
+        width: 100%;
+    }
+
+    #side-nav {
+        /*display: block;*/
+    }
+
+    #world-chat {
+        display: inline-block;
+        width: 60%;
+    }
+
+    #world-logs {
+        height: 40em;
+    }
+
+    #world-area {
+        float: right;
+        width: calc(40% - 14px);
+        height: 100%;
+        margin-top: 0px;
+        margin-left: 4px;
+    }
+}
+
+
+.form-item label {
+    display: block;
+}
+

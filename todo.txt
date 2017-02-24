@@ -4,6 +4,10 @@
 
 * urls would signify where you are, and could be passed around for ... some reason
 * linking would be easy and integrated into the experience
+* possibly audio playing live? (this could be abused of course)
+
+* customizable css files, which could be stored on the server and downloaded only to the authorized user.  It shouldn't require protections because it's
+  all client side.
 
 * A significant part would still be chat.  You would see a description of the room you're in, a list of people and objects, and a chat window of the current
   content in the room.  You would see the exits in a visual format, with the option to click on them to travel.  Clicking on a person or object would allow you
@@ -11,4 +15,13 @@
 * shortcut commands would still be included to make navigation easier for desktop users
 
 * have a profile page which makes it easy to change things about you
+
+
+* how will you store data?
+* should you store objects as pointers or as a universal reference
+
+
+* only one connection is allowed at a time, but the server side never nulls the connection, nor checks to see if a
+  connection exists before connecting a new client
+
 

@@ -1,0 +1,25 @@
+
+#world-area .title {
+    color: purple;
+}
+
+#world-area .description {
+    color: green;
+}
+
+#world-area .player-info {
+    margin-top: 2em;
+}
+
+#world-area .viewbox {
+    border: 1px solid #235915;
+    border-radius: 6px;
+    padding: 4px;
+    margin-top: 4px;
+}
+
+#world-area .tinylabel {
+    font-size: 0.6em;
+}
+
+
