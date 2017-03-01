@@ -1,18 +1,15 @@
  
 
 * a MUSH for the modern age... a more visually/intuitively interactive system, easily used on mobile
-
-* urls would signify where you are, and could be passed around for ... some reason
-* linking would be easy and integrated into the experience
-* possibly audio playing live? (this could be abused of course)
-
-* customizable css files, which could be stored on the server and downloaded only to the authorized user.  It shouldn't require protections because it's
-  all client side.
-
 * A significant part would still be chat.  You would see a description of the room you're in, a list of people and objects, and a chat window of the current
   content in the room.  You would see the exits in a visual format, with the option to click on them to travel.  Clicking on a person or object would allow you
   to select an interaction
-* shortcut commands would still be included to make navigation easier for desktop users
+
+* urls would signify where you are, and could be passed around for ... some reason
+* possibly audio playing live? (this could be abused of course)
+* music + background image for part of screen, to set the mood of the location
+* customizable css files, which could be stored on the server and downloaded only to the authorized user.  It shouldn't require protections because it's
+  all client side.
 
 * have a profile page which makes it easy to change things about you
 
@@ -21,7 +18,40 @@
 * should you store objects as pointers or as a universal reference
 
 
-* only one connection is allowed at a time, but the server side never nulls the connection, nor checks to see if a
-  connection exists before connecting a new client
+* add user registration
+* make input autofocus
+* add up/down arrows to input for history of commands
+
+
+* add drop success, drop fail, take success, take fail, etc messages to objects.. and add acceptable, etc checks, same for moveto/go
+* a lot of commands fail with 'I don't understand' because it doesn't parse them to figure out the intended thing, like /pickup thing
+  should return 'I don't see that here' rather than 'I don't understand'
+* websocket reconnects when you refresh the browser window.  Is there a way to prevent that on reload?
+
+
+* add editable fields
+* add editable_for(player) function
+* add parameters.  Anything more than just a target select could enter the command on the command line for completion
+
+
+* give
+* whisper
+* stand? sit? or should you do fully customizable poses?
+* follow/unfollow
+* favorite location (and have menu at top)
+
+
+
+RPG:
+* eat/drink
+* kill/attack/stop
+* wear/hold/weild
+* search/traps
+* open/close/lock/pick/knock
+* steal/sneak/backstab/sneak
+* spells/cast
+* learn/train/etc
+* store, where you list items for sale, and other users can view, buy, offer
+
 
 

@@ -2,61 +2,9 @@
 'use strict';
 
 const m = require('mithril');
+const parseDecorations = require('./decorations');
 
-const websocket = require('../websocket');
-
-
-const World = {
-    logs: [ ],
-    view: { },
-    input: '',
-
-    connect: function (vnode) {
-        websocket.connect();
-
-        let value = window.localStorage.getItem('logs');
-        console.log(value);
-        if (value)
-            World.logs = JSON.parse(value);
-    },
-
-    receive: function (ws, msg) {
-        console.log("WS MSG IN", msg);
-        if (msg.type == 'log') {
-            World.logs.push(msg.text);
-            window.localStorage.setItem('logs', JSON.stringify(World.logs));
-        }
-        else if (msg.type == 'update') {
-            if (msg.player)
-                World.view.player = msg.player;
-            if (msg.location)
-                World.view.location = msg.location;
-        }
-        else
-            return;
-        m.redraw();
-    },
-
-    setInput: function (value) {
-        World.input = value;
-    },
-
-    send: function () {
-        console.log('send', World.input);
-        if (World.input) {
-            websocket.send({ type: 'input', text: World.input });
-            this.input = '';
-        }
-    },
-
-    go: function (direction) {
-        console.log("GO", arguments);
-        websocket.send({ type: 'go', text: direction });
-    }
-
-};
-
-websocket.use(World.receive);
+const World = require('../model');
 
 
 const WorldArea = {
@@ -79,9 +27,15 @@ const WorldArea = {
 };
 
 const WorldLogs = {
+    onupdate: function (vnode) {
+        let logs = document.getElementById('world-logs');
+        if (logs.scrollTop != logs.scrollHeight)
+            logs.scrollTop = logs.scrollHeight;
+    },
+
     view: function (vnode) {
         return vnode.attrs.logs.map(function (line) {
-            return m('li', line);
+            return m('li', parseDecorations(line));
         });
     },
 };
@@ -89,54 +43,157 @@ const WorldLogs = {
 const WorldInput = {
     checkEnter: function (e) {
         if (e.key == "Enter")
-            World.send();
+            World.processInput();
     },
 
     view: function (vnode) {
         return [
             m('input', { id: "world-input", type: "text", oninput: m.withAttr('value', World.setInput), onkeydown: this.checkEnter, value: World.input }),
-            m('button', { type: "button", onclick: World.send }, "Say"),
+            m('button', { type: "button", onclick: World.processInput }, "Say"),
         ];
+    },
+};
+
+const ViewBox = {
+    expand: true,
+    view: function (vnode) {
+        if (!vnode.state.expand) {
+            return m('div[class=viewbox]', vnode.attrs, [
+                m('a', { class: 'viewbox-expand', href: '#', onclick: () => { vnode.state.expand = true; } }, 'more'),
+                vnode.children.slice(0, 2),
+            ]);
+        }
+        else {
+            return m('div[class=viewbox]', vnode.attrs, [
+                m('a', { class: 'viewbox-expand', href: '#', onclick: () => { vnode.state.expand = false; } }, 'less')
+            ].concat(vnode.children));
+        }
+    },
+}
+
+const EditableField = {
+    editing: false,
+
+    startEdit: function () {
+        this.editing = true;
+    },
+
+    onupdate: function (vnode) {
+        vnode.dom.focus();
+    },
+
+    endEdit: function (value) {
+        this.editing = false;
+        console.log("NEW", this, arguments);
+        World.editAttr(this.attr, value);
+    },
+
+    keyDown: function (e) {
+        if (e.key == "Escape")
+            this.editing = false;
+    },
+
+    view: function (vnode) {
+        if (vnode.state.editing)
+            return m('textarea', Object.assign({
+                onblur: m.withAttr('value', this.endEdit.bind(this)),
+                onkeydown: this.keyDown.bind(this),
+            }, vnode.attrs), vnode.children);
+        else
+            return m('div', Object.assign({ onclick: this.startEdit.bind(this) }, vnode.attrs), vnode.children);
     },
 };
 
 const WorldView = {
     view: function (vnode) {
-        if (!vnode.attrs.view.location)
-            return m('div', { class: 'location-info viewbox' }, "You don't seem to be... anywhere");
-
         return [
-            m('div', { class: 'location-info viewbox' }, [
-                m('div', { class: 'title' }, vnode.attrs.view.location.title),
-                m('div', { class: 'description' }, vnode.attrs.view.location.description),
-                m('table', { class: 'exits' }, vnode.attrs.view.location.exits.map(function (exit) {
-                    return m('tr', [
-                        m('td', m('a', { href: "#", onclick: World.go.bind(World, exit[0]) }, exit[0])),
-                        m('td', exit[1]),
-                    ]);
-                })),
-                m('table', { class: 'contents' }, vnode.attrs.view.location.contents.map(function (item) {
-                    return m('tr', [
-                        //m('td', m('a', { href: "#", onclick: World.go.bind(World, exit[0]) }, exit[0])),
-                        m('td', item),
-                    ]);
-                })),
-            ]),
-            m('div', { class: 'player-info viewbox' }, [
-                m('div', { class: 'title' }, "You are " + vnode.attrs.view.player.title),
-                m('div', { class: 'description' }, vnode.attrs.view.player.description),
-                m('span', { class: 'tinylabel' }, "Inventory:"),
-                m('table', { class: 'contents' }, vnode.attrs.view.player.contents.map(function (item) {
-                    return m('tr', [
-                        //m('td', m('a', { href: "#", onclick: World.go.bind(World, exit[0]) }, exit[0])),
-                        m('td', item),
-                    ]);
-                })),
-            ]),
+            m(WorldViewLocation, { location: vnode.attrs.view.location }),
+            vnode.attrs.view.details ? m(WorldViewDetails, { details: vnode.attrs.view.details }) : '',
+            m(WorldViewPlayer, { player: vnode.attrs.view.player }),
         ];
     },
 };
 
+const WorldViewLocation = {
+    view: function (vnode) {
+        if (!vnode.attrs.location)
+            return m(ViewBox, { class: 'location-info' }, "You don't seem to be... anywhere");
+
+        return m(ViewBox, { class: 'location-info' }, [
+            m('span', { class: 'tinylabel' }, "You are in"),
+            m('div', { class: 'title' }, vnode.attrs.location.title),
+            m('div', { class: 'description' }, vnode.attrs.location.description),
+            m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.location })),
+            m('span', { class: 'tinylabel' }, "Exits"),
+            m('table', { class: 'exits' }, vnode.attrs.location.exits.map(function (exit) {
+                return m('tr', [
+                    m('td', m('a', { href: "#", onclick: World.go.bind(World, exit.name) }, exit.name)),
+                    m('td', exit.title),
+                ]);
+            })),
+            m('span', { class: 'tinylabel' }, "Also here are"),
+            m('table', { class: 'contents' }, vnode.attrs.location.contents.map(function (item) {
+                return m('tr', [
+                    m('td', m('a', { href: "#", onclick: World.look.bind(World, item.name) }, item.pose ? item.pose : item.title)),
+                    m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
+                ]);
+            })),
+        ]);
+    },
+};
+
+const WorldViewPlayer = {
+    view: function (vnode) {
+        if (!vnode.attrs.player)
+            return [];
+
+        return m(ViewBox, { class: 'player-info' }, [
+            m('span', { class: 'tinylabel' }, "You are"),
+            m('div', { class: 'title' }, vnode.attrs.player.title),
+            m('div', { class: 'description' }, vnode.attrs.player.description),
+            //m(EditableField, { class: 'description', objid: vnode.attrs.player.id, attr: 'description' }, vnode.attrs.player.description),
+            m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.player })),
+            m('span', { class: 'tinylabel' }, "You are carrying"),
+            m('table', { class: 'contents' }, vnode.attrs.player.contents.map(function (item) {
+                return m('tr', [
+                    m('td', m('a', { href: "#", onclick: World.look.bind(World, item.name) }, item.title)),
+                    m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
+                ]);
+            })),
+        ]);
+    },
+};
+
+const WorldViewDetails = {
+    view: function (vnode) {
+        if (!vnode.attrs.details)
+            return [];
+
+        return m(ViewBox, { class: 'details-info', onclick: function() { World.view.details = null; } }, [
+            m('span', { class: 'tinylabel' }, "You are looking at"),
+            m('div', { class: 'title' }, vnode.attrs.details.title),
+            m('div', { class: 'description' }, vnode.attrs.details.description),
+        ]);
+    },
+};
+
+const WorldVerbList = {
+    view: function (vnode) {
+        if (vnode.attrs.item.verbs.length <= 0)
+            return [];
+
+        let verbs = [ ];
+        verbs.push("(");
+        vnode.attrs.item.verbs.forEach(function (verb) {
+            let parts = verb.split('|');
+            verbs.push(m('a', { href: "#", onclick: World.doVerb.bind(World, parts[0], vnode.attrs.item) }, parts[0]));
+            verbs.push(", ");
+        });
+        verbs.pop();
+        verbs.push(")");
+        return verbs;
+    },
+};
 
 module.exports = WorldArea;
  

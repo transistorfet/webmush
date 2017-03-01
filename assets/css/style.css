@@ -53,6 +53,8 @@ a:visited {
 
     overflow: auto;
     height: 15em;
+
+    list-style-type: none;
 }
 
 #world-input-div button {
@@ -61,16 +63,19 @@ a:visited {
 }
 
 #world-input {
-    width: calc(100% - 6ex);
+    width: calc(100% - 6ex - 10px);
 }
 
 #world-area {
     margin: 0px auto;
-    /*border: 1px solid #235915;
+    margin-bottom: 1em;
+}
+
+.viewbox {
+    border: 1px solid #235915;
     border-radius: 6px;
     padding: 4px;
-    margin-top: 4px;*/
-    margin-bottom: 1em;
+    margin-top: 4px;
 }
 
 @media screen and (min-width: 1000px) {
@@ -101,8 +106,15 @@ a:visited {
         float: right;
         width: calc(40% - 14px);
         height: 100%;
-        margin-top: 0px;
         margin-left: 4px;
+    }
+
+    .viewbox {
+        margin-top: 0px;
+    }
+
+    .viewbox + .viewbox {
+        margin-top: 4px;
     }
 }
 

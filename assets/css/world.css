@@ -7,19 +7,35 @@
     color: green;
 }
 
+#world-logs .status {
+    color: magenta;
+}
+
+#world-logs .chat {
+    color: blue;
+}
+
+#world-logs .shout {
+    color: red;
+}
+
+#world-logs .action {
+    color: green;
+}
+
+/*
 #world-area .player-info {
     margin-top: 2em;
 }
-
-#world-area .viewbox {
-    border: 1px solid #235915;
-    border-radius: 6px;
-    padding: 4px;
-    margin-top: 4px;
-}
+*/
 
 #world-area .tinylabel {
     font-size: 0.6em;
+}
+
+#world-area .viewbox-expand {
+    font-size: 0.6em;
+    float: right;
 }
 
 

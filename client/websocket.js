@@ -25,10 +25,6 @@ const connect = function ()
     ws.addEventListener('close', onClose);
 
     ws.addEventListener('message', onMsg);
-
-    //setTimeout(function () {
-    //    ws.send("My Thing");
-    //}, 10000);
 }
 
 const onClose = function (msg) {
