@@ -3,6 +3,22 @@
 
 let World = require('./world');
 
+class Connection {
+    constructor(ws) {
+        this.ws = ws;
+    }
+
+    send_log(text) {
+        console.log("WS TX", text);
+        this.ws.send(JSON.stringify({ type: 'log', text: text }));
+    }
+
+    send_json(data) {
+        console.log("WS TX", data);
+        this.ws.send(JSON.stringify(data));
+    }
+}
+
 
 const onConnect = function (ws, req, next)
 {
@@ -20,6 +36,7 @@ const onConnect = function (ws, req, next)
         ws.player = World.Objects[req.user.player];
 
         let connection = {
+            $nosave: true,
             send_log(text) {
                 console.log("WS TX", text);
                 ws.send(JSON.stringify({ type: 'log', text: text }));
@@ -29,11 +46,13 @@ const onConnect = function (ws, req, next)
                 ws.send(JSON.stringify(data));
             }
         };
+        // TODO this causes a circular references when saving player object because the ws is stored in the object rather than as a closure like the above one does
+        //let connection = new Connection(ws);
 
         ws.player.connect(connection);
 
         ws.on('close', function (msg) {
-            console.log('websocket connection lost for ', ws.player);
+            console.log('websocket connection lost for', ws.player ? ws.player.name + ' (' + ws.player.id + ')' : 'unconnected player');
             if (ws.player)
                 ws.player.disconnect(connection);
         });
@@ -69,46 +88,42 @@ const onMsg = function (ws, msg)
     else if (msg.type == 'go') {
         ws.player.location.go(args);
     }
-    else if (msg.type == 'look') {
-        let item = ws.player.match_object(msg.text);
-
-        if (item) {
-            ws.player.tell_msg({
-                type: 'update',
-                section: 'details',
-                details: item.get_view(ws.player),
-            });
-        }
-        else {
-            ws.player.tell_msg({
-                type: 'log',
-                text: "You don't see that here."
-            });
-        }
-    }
     else if (msg.type == 'do') {
-        let item, verbs;
-
         if (msg.id && msg.id >= 0 && msg.id < World.Objects.length)
-            item = World.Objects[msg.id];
+            args.dobj = World.Objects[msg.id];
         else if (msg.text) {
-            item = ws.player.match_object(msg.text);
+            let m = msg.text.match(parse);
+            if (!m)
+                args.dobj = ws.player.match_object(msg.text);
+            else {
+                args.dobjstr = m[1];
+                args.prep = m[2];
+                args.iobjstr = m[3];
+                args.dobj = ws.player.match_object(args.dobjstr);
+                args.iobj = ws.player.match_object(args.iobjstr);
+            }
         }
 
-        if (item) {
-            if (item.can_do(ws.player, msg.verb))
-                item[msg.verb].apply(item, [args]);
-            else
-                ws.player.tell("You can't do that");
-        }
-        else {
-            if (ws.player.can_do(ws.player, msg.verb))
-                ws.player[msg.verb].apply(ws.player, [args]);
-            else if (ws.player.location.can_do(ws.player, msg.verb))
-                ws.player.location[msg.verb].apply(ws.player.location, [args]);
-            else
-                ws.player.tell("I don't understand that.");
-        }
+        if (args.dobj && args.dobj.can_do(ws.player, msg.verb))
+            args.dobj[msg.verb].apply(args.dobj, [args]);
+        else if (ws.player.can_do(ws.player, msg.verb))
+            ws.player[msg.verb].apply(ws.player, [args]);
+        else if (ws.player.location.can_do(ws.player, msg.verb))
+            ws.player.location[msg.verb].apply(ws.player.location, [args]);
+        else
+            ws.player.tell("I don't understand that.");
+    }
+    else if (msg.type == 'edit') {
+        if (!msg.id || msg.id < 0 || msg.id >= World.Objects.length)
+            ws.player.tell("Invalid object provided for attribute edit");
+        let item = World.Objects[msg.id];
+
+        let editables = item.editable_by(ws.player);
+        if (!msg.attr || editables.indexOf(msg.attr) == -1)
+            ws.player.tell("You aren't allowed to edit that attribute");
+
+        item[msg.attr] = msg.text;
+        ws.player.update_view();
     }
     else if (msg.type == 'help') {
         ws.player.tell("Commands: " + ws.player.verbs_for(ws.player, true).concat(ws.player.location.verbs_for(ws.player, true)).join(', '));
@@ -116,6 +131,39 @@ const onMsg = function (ws, msg)
 
     return;
 };
+
+const prepositions = [
+    "with",
+    "using",
+    "at",
+    "to",
+    "in front of",
+    "in",
+    "inside",
+    "into",
+    "on top of",
+    "on",
+    "onto",
+    "upon",
+    "out of",
+    "from inside",
+    "from",
+    "over",
+    "through",
+    "under",
+    "underneath",
+    "beneath",
+    "behind",
+    "beside",
+    "for",
+    "about",
+    "is",
+    "as",
+    "off",
+    "off of",
+];
+
+let parse = new RegExp('^(.*?)\\s+(' + prepositions.join('|') + ')\\s+(.*)$');
 
 module.exports = onConnect;
 

@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function ()
         '/': Page(Welcome),
         '/world': Page(World),
         '/login': Page(Users.Login),
+        '/signup': Page(Users.SignUp),
     });
 });
 

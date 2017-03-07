@@ -2,20 +2,37 @@
 'use strict';
 
 const express = require('express');
-const sqlite3 = require("sqlite3").verbose();
+const bcrypt = require('bcrypt');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
+const World = require('./world');
+
+
 let router = express.Router();
-let db = new sqlite3.Database('data.db');
+let saltRounds = 10;
+let minPassword = 6;
+let maxPassword = 32;
 
-db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, password TEXT, email TEXT, player TEXT)");
+passport.use(new LocalStrategy(function(username, password, done) {
+    let user = World.findPlayer(username);
+    if (!user || !bcrypt.compareSync(password, user.password)) {
+        return done(null, false, { message: "Invalid username or password" });
+    }
+    return done(null, user);
+}));
 
+passport.serializeUser(function(user, done) {
+    done(null, user.id);
+});
 
-//router.post('/login', passport.authenticate('local', {
-    //successRedirect: '/world',
-    //failureRedirect: '/login',
-//}));
+passport.deserializeUser(function(id, done) {
+    // TODO just return the id??
+    //let user = World.Objects[id];
+    let user = { id: id, player: id };
+    done(null, user);
+});
+
 
 router.post('/login', function(req, res, next) {
     passport.authenticate('local', function(err, user, info) {
@@ -28,27 +45,96 @@ router.post('/login', function(req, res, next) {
     })(req, res, next);
 });
 
+router.put('/signup', function(req, res, next) {
+    if (!req.body.username || World.findPlayer(req.body.username))
+        return res.status(400).json({ authenticated: false, error: "That username is already taken" });
+    if (req.body.password.length < minPassword)
+        return res.status(400).json({ authenticated: false, error: "Passwords must be at least " + minPassword + " characters long" });
+    if (req.body.password.length > maxPassword)
+        return res.status(400).json({ authenticated: false, error: "Passwords can be no longer than " + maxPassword + " characters long" });
+    // TODO verify email??
+
+    let hash = bcrypt.hashSync(req.body.password, saltRounds);
+    let player = World.createNewPlayer(req.body.username, hash, req.body.email);
+
+    passport.authenticate('local', function(err, user, info) {
+        if (err) { return next(err); }
+        if (!user) { return res.status(400).json({ authenticated: false, error: "Invalid username or password" }); }
+        req.logIn(user, function() {
+            res.status(200).send({ authenticated: true });
+        });
+    })(req, res, next);
+});
+
+router.post('/passwd', function(req, res, next) {
+    // TODO change password
+    //bcrypt.hash(req.body.password, function (hash) { console.log(hash); });
+    //db.run('UPDATE notes SET `password`="' + req.body.title + '", `body`="' + req.body.body + '" WHERE `username`="' + req.body.username + '"', function (err, row) {
+});
+
+
+
+
 /*
+const sqlite3 = require("sqlite3").verbose();
+let db = new sqlite3.Database('data.db');
+
+db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, password TEXT, email TEXT, player TEXT)");
+
+passport.use(new LocalStrategy(function(username, password, done) {
+    db.get("SELECT id,username,password FROM users WHERE username=?", username, function (err, user) {
+        if (!user || !bcrypt.compareSync(password, user.password)) {
+            return done(null, false, { message: "Invalid username or password" });
+        }
+        return done(null, user);
+    });
+}));
+
+passport.serializeUser(function(user, done) {
+    done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+    db.get("SELECT id,username,email,player FROM users WHERE id=?", id, function (err, user) {
+        user.player = parseInt(user.player);
+        done(err, user);
+    });
+});
+
+
 router.post('/login', function(req, res, next) {
-  db.get("SELECT id,username,password FROM users WHERE username=?", req.body.username, function (err, rows) {
-    if (!rows || rows.password != req.body.password) {
-      res.json({"error": "Invalid username or password"});
-    }
-    else {
-      res.json({"success": "Successfully logged in"});
-    }
-  });
+    passport.authenticate('local', function(err, user, info) {
+        console.log(err, user, info);
+        if (err) { return next(err); }
+        if (!user) { return res.status(400).json({ authenticated: false, error: "Invalid username or password" }); }
+        req.logIn(user, function() {
+            res.status(200).send({ authenticated: true });
+        });
+    })(req, res, next);
+});
+
+router.put('/signup', function(req, res, next) {
+    if (!req.body.username) // || user already exists
+        return res.status(400).json({ authenticated: false, error: "That username is already taken" });
+    if (req.body.password.length < minPassword)
+        return res.status(400).json({ authenticated: false, error: "Passwords must be at least " + minPassword + " characters long" });
+    if (req.body.password.length > maxPassword)
+        return res.status(400).json({ authenticated: false, error: "Passwords can be no longer than " + maxPassword + " characters long" });
+    // TODO verify email??
+
+    let hash = bcrypt.hashSync(req.body.password, saltRounds);
+    let player = World.createNewPlayer(req.body.username, hash, req.body.email);
+    db.run('INSERT INTO users (username,password,email,player) VALUES ("' + req.body.username + '", "' + hash + '", "' + req.body.email + '", "' + player + '")', function (err, row) {
+        passport.authenticate('local', function(err, user, info) {
+            if (err) { return next(err); }
+            if (!user) { return res.status(400).json({ authenticated: false, error: "Invalid username or password" }); }
+            req.logIn(user, function() {
+                res.status(200).send({ authenticated: true });
+            });
+        })(req, res, next);
+    });
 });
 */
-
-router.put('/register', function(req, res, next) {
-  db.run('INSERT INTO users (username,password) VALUES ("' + req.body.username + '", "' + req.body.password + '")', function (err, row) {
-    console.log(err, row);
-    res.setHeader('Content-Type', 'application/json');
-    res.status(!err ? 200 : 404);
-    res.send(JSON.stringify(!err ? true : false));
-  });
-});
 
 /*
 router.post('/user/:id', function(req, res, next) {
@@ -70,25 +156,7 @@ router.delete('/user/delete/:id', function(req, res, next) {
 });
 */
 
-passport.use(new LocalStrategy(function(username, password, done) {
-    db.get("SELECT id,username,password FROM users WHERE username=?", username, function (err, user) {
-        if (!user || user.password != password) {
-            return done(null, false, { message: "Invalid username or password" });
-        }
-        return done(null, user);
-    });
-}));
 
-passport.serializeUser(function(user, done) {
-    done(null, user.id);
-});
-
-passport.deserializeUser(function(id, done) {
-    db.get("SELECT id,username,email,player FROM users WHERE id=?", id, function (err, user) {
-        user.player = parseInt(user.player);
-        done(err, user);
-    });
-});
 
 
 module.exports = router;

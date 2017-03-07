@@ -14,24 +14,29 @@
 * have a profile page which makes it easy to change things about you
 
 
-* how will you store data?
-* should you store objects as pointers or as a universal reference
 
 
 * add user registration
+
 * make input autofocus
-* add up/down arrows to input for history of commands
+* websocket reconnects when you refresh the browser window.  Is there a way to prevent that on reload?
+* add a way of dismissing the 'details' view, without interfering with the editing of fields
+* objects are loaded multiple times, when they shouldn't be
+* add periodic object saver
 
 
-* add drop success, drop fail, take success, take fail, etc messages to objects.. and add acceptable, etc checks, same for moveto/go
 * a lot of commands fail with 'I don't understand' because it doesn't parse them to figure out the intended thing, like /pickup thing
   should return 'I don't see that here' rather than 'I don't understand'
-* websocket reconnects when you refresh the browser window.  Is there a way to prevent that on reload?
+* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
+* add aliasing and/or partial, case-insensitive matching of names
+* allow partial and alternate command names?
 
+* add way to delete an object with a command
+* add a check to make sure an object is dereferenced for deletion? or add a garbage collection phase, scheduled periodically
 
-* add editable fields
-* add editable_for(player) function
 * add parameters.  Anything more than just a target select could enter the command on the command line for completion
+* allow /give biscut to person
+* add a command to add attributes, and add functions... it would be for wizards only, and maybe would be a separate editor somewhere/somehow
 
 
 * give
@@ -54,4 +59,7 @@ RPG:
 * store, where you list items for sale, and other users can view, buy, offer
 
 
+
+* 'leash' the ducky, which makes it follow you, and also somehow makes it so that in descriptions, it shows you holding the leash... so it makes it
+  clear to others (this is just an example for an effect that crosses beings)
 

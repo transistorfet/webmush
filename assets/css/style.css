@@ -123,3 +123,7 @@ a:visited {
     display: block;
 }
 
+.viewbox textarea {
+    width: 100%;
+}
+

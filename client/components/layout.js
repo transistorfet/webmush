@@ -19,7 +19,11 @@ const Page = function(content)
 
 const UserNav = {
     view: function (vnode) {
-        return m('a', { href: "/login" }, "Login");
+        return [
+            m('a', { href: "/login" }, "Login"),
+            " | ",
+            m('a', { href: "/signup" }, "Sign Up"),
+        ];
     },
 }
 

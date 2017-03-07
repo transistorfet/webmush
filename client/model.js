@@ -8,6 +8,9 @@ const World = {
     logs: [ ],
     view: { },
     input: '',
+    history: [ ],
+    history_index: 0,
+    connected: false,
 
     connect: function (vnode) {
         websocket.connect();
@@ -18,6 +21,7 @@ const World = {
     },
 
     receive: function (ws, msg) {
+        World.connected = true;
         console.log("WS MSG IN", msg);
         if (msg.type == 'log') {
             World.log(msg.text);
@@ -35,6 +39,14 @@ const World = {
         m.redraw();
     },
 
+    close: function (msg) {
+        if (World.connected) {
+            World.log("<status>Disconnected");
+            m.redraw();
+        }
+        World.connected = false;
+    },
+
     log(text) {
         World.logs.push(text);
         World.logs = World.logs.slice(-200);
@@ -45,37 +57,55 @@ const World = {
         World.input = value;
     },
 
+    historyUp: function () {
+        World.history_index -= 1;
+        if (World.history_index < 0)
+            World.history_index = 0;
+        World.input = World.history[World.history_index];
+    },
+
+    historyDown: function () {
+        World.history_index += 1;
+        if (World.history_index >= World.history.length) {
+            World.history_index = World.history.length;
+            World.input = '';
+        }
+        else {
+            World.input = World.history[World.history_index];
+        }
+    },
+
     processInput: function () {
         if (!World.input)
             return;
 
         if (World.input.indexOf('/') == 0) {
-            let [_, cmd, text] = World.input.match(/^\/(\S*)(?:\s+(.*))?$/);
-            if (cmd == 'me')
-                websocket.send({ type: 'emote', text: text });
-            else if (cmd == 'clear') {
+            let [_, cmd, text] = World.input.trim().match(/^\/(\S*)(?:\s+(.*))?$/);
+            if (cmd == 'clear') {
                 window.sessionStorage.clear('logs');
                 World.logs = [ ];
             }
-            else if (cmd == 'help') {
+            else if (cmd == 'me')
+                websocket.send({ type: 'emote', text: text });
+            else if (cmd == 'help')
                 websocket.send({ type: 'help', text: text });
-            }
-            else {
+            else
                 websocket.send({ type: 'do', verb: cmd, text: text });
-            }
         }
         else
             websocket.send({ type: 'say', text: World.input });
+
+        World.history.push(World.input);
+        World.history_index = World.history.length;
         World.input = '';
     },
 
     go: function (direction) {
-        console.log("GO", arguments);
         websocket.send({ type: 'go', text: direction });
     },
 
     look: function (name) {
-        websocket.send({ type: 'look', text: name });
+        websocket.send({ type: 'do', verb: 'look', text: name });
     },
 
     doVerb: function (verb, item) {
@@ -83,12 +113,13 @@ const World = {
         websocket.send({ type: 'do', verb: verb, id: item.id });
     },
 
-    editAttr: function (attr, value) {
-        websocket.send({ type: 'edit', text: value, attr: attr });
+    editAttr: function (id, attr, value) {
+        websocket.send({ type: 'edit', id: id, attr: attr, text: value });
     },
 };
 
 websocket.use(World.receive);
+websocket.notifyClose(World.close);
 
 module.exports = World;
 
