@@ -16,34 +16,42 @@
 
 
 
-* add user registration
-
 * make input autofocus
-* websocket reconnects when you refresh the browser window.  Is there a way to prevent that on reload?
-* add a way of dismissing the 'details' view, without interfering with the editing of fields
-* objects are loaded multiple times, when they shouldn't be
-* add periodic object saver
-
-
-* a lot of commands fail with 'I don't understand' because it doesn't parse them to figure out the intended thing, like /pickup thing
-  should return 'I don't see that here' rather than 'I don't understand'
-* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
-* add aliasing and/or partial, case-insensitive matching of names
-* allow partial and alternate command names?
 
 * add way to delete an object with a command
 * add a check to make sure an object is dereferenced for deletion? or add a garbage collection phase, scheduled periodically
+* reuse object ids when allocating new objects
+* fix the hack during load where we assume the last object is the newest object; instead allow a constructor argument to set the id (maybe only if id is not used)
+* add an object clone command
+* maybe use es5 prototypes instead of es6 classes???
 
-* add parameters.  Anything more than just a target select could enter the command on the command line for completion
-* allow /give biscut to person
 * add a command to add attributes, and add functions... it would be for wizards only, and maybe would be a separate editor somewhere/somehow
+* allow partial and alternate command names?
+
+* add command parser to root or something, so you can call verbs properly
+* add a back command so you can easily go back to where you were, or make it work with back buttons
+* there is an issue with /go #id, where the parser executes go on #id, when it should execute go on player.location.  Before I was having an
+  issue with /hug player such that it was hugging the player first rather than hugging the ducky =/
 
 
-* give
+* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
+* add parameters.  Anything more than just a target select could enter the command on the command line for completion
+* add support for dot names in attributes, so that you can edit 'style.icon', etc
+
+
+* what about fancy features, like images, background images, ui effects, colour animations
+* add notifications for activity in the current room, and maybe a way to filter only certain events
+* should it be possible to change the css rules for everything in the viewbox; so if you have a background that makes text hard to read, you can change that while
+  still using the class of the text to know what colour to choose
+
+
 * whisper
 * stand? sit? or should you do fully customizable poses?
 * follow/unfollow
 * favorite location (and have menu at top)
+* add/remove aliases
+* move exits up/down
+* who
 
 
 

@@ -23,6 +23,11 @@ button:active {
     background-color: #444444;
 }
 
+a {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 a:visited {
     color: #4B1559;
 }

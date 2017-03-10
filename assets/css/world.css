@@ -38,4 +38,11 @@
     float: right;
 }
 
+#world-area .small-icon {
+    display: inline-block;
+    height: 16px;
+    width: 16px;
+    background-image: url("/assets/img/icons.png");
+    background-position: -32px -64px;
+}
 

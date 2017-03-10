@@ -2,6 +2,7 @@
 'use strict';
 
 const fs = require('fs');
+const Utils = require('./utils');
 
 var Objects = [ ];
 
@@ -11,9 +12,26 @@ class Root {
         Objects.push(this);
         this.id = Objects.length - 1;
         this.name = "unnamed object";
+        this.aliases = [];
         this.location = null;
         this.contents = [];
     }
+
+    /*
+    clone() {
+        //let cls = class extends this.constructor {};
+        //cls.prototype = Object.create(this);
+        //return new cls();
+        let obj = new this.constructor();
+        let id = obj.id;
+        Object.assign(obj, this);
+        obj.id = id;
+        obj.location = null;
+        obj.contents = [ ];
+        obj.moveto(this.location);
+        return obj;
+    }
+    */
 
     recycle() {
         // TODO check to make sure there are no references?
@@ -44,10 +62,46 @@ class Root {
             }
             if (mod == '-')
                 return value.toLowerCase();
+            else if (mod == '^')
+                return value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : '';
             else
                 return value;
         });
     }
+
+    match_alias(name) {
+        return [ this.name, this.title ].concat(this.aliases).some(function (alias) {
+            return alias.toLowerCase().substr(0, name.length) == name;
+        });
+    }
+
+    find_object(name) {
+        name = name.toLowerCase();
+
+        if (name == 'me')
+            return this;
+        if (name == 'here')
+            return this.location;
+
+        let m;
+        if (m = name.match(/^#(\d+)$/)) {
+            if (m[1] < 0 || m[1] >= Objects.length)
+                return null;
+            return Objects[m[1]];
+        }
+
+        for (let i = 0; i < this.contents.length; i++) {
+            if (this.contents[i].match_alias(name))
+                return this.contents[i];
+        }
+
+        for (let i = 0; i < this.location.contents.length; i++) {
+            if (this.location.contents[i].match_alias(name))
+                return this.location.contents[i];
+        }
+        return null;
+    }
+
 
     tell(text) {
         // do nothing
@@ -74,6 +128,7 @@ class Root {
         location.contents.push(this);
         this.location = location;
         location.update_contents();
+        console.log("Moved", this.id, "to", this.location.id);
         return true;
     }
 
@@ -98,37 +153,40 @@ class Root {
     }
 
     editable_by(player) {
-        return [];
+        return ['name', 'aliases|array', 'title'];
     }
+
+    edit_by(player, attr, value) {
+        // TODO add support for subelements of attributes (like style.icon)
+        let editables = this.editable_by(player);
+        if (!attr.match(/^[\w]+$/))
+            throw "That attribute name is invalid";
+
+        let info = editables.find((i) => { return i.split('|')[0] == attr; });
+        if (!info)
+            throw "You aren't allowed to edit that attribute";
+
+        let typename = info.split('|').splice(1).shift();
+        if (typename == 'array') {
+            if (!Array.isArray(value))
+                throw "The value for that attribute must be an array";
+        }
+        else if (typeof value != (typename ? typename : 'string'))
+            throw "The value for that attribute must be a " + (typename ? typename : 'string');
+
+        this[attr] = value;
+        this.update_contents();
+        return true;
+    }
+
+    get title() { return this.name.capitalize(); }
+    set title(t) { this.name = t; }
 }
 
 class Thing extends Root {
     constructor() {
         super();
-        this.title = "A nondiscript object";
         this.description = "You aren't sure what it is.";
-    }
-
-    match_object(name) {
-        name = name.toLowerCase();
-
-        let m;
-        if (m = name.match(/^#(\d+)$/)) {
-            if (m[1] < 0 || m[1] >= Objects.length)
-                return null;
-            return Objects[m[1]];
-        }
-
-        for (let i = 0; i < this.contents.length; i++) {
-            if (this.contents[i].name.toLowerCase().substr(0, name.length) == name)
-                return this.contents[i];
-        }
-
-        for (let i = 0; i < this.location.contents.length; i++) {
-            if (this.location.contents[i].name.toLowerCase().substr(0, name.length) == name)
-                return this.location.contents[i];
-        }
-        return null;
     }
 
     get_view(player) {
@@ -145,12 +203,18 @@ class Thing extends Root {
     editable_by(player) {
         let props = super.editable_by(player);
         if (player.isWizard || this == player)
-            props.push('name', 'title', 'description');
+            props.push('description');
         return props;
     }
 }
 
 class Being extends Thing {
+
+    get title() { return this.fullname ? this.fullname : this.name; }
+    set title(t) {
+        this.name = t.split(" ", 2)[0];
+        this.fullname = t;
+    }
 
     acceptable(obj) {
         return false;
@@ -162,15 +226,22 @@ class Being extends Thing {
         return verbs;
     }
 
+    editable_by(player) {
+        let props = super.editable_by(player);
+        //if (player.isWizard || this == player)
+        //    props.push('');
+        return props;
+    }
+
     hug(args) {
         if (this == args.player) {
             args.player.tell("<action>You hug yourself.");
-            args.player.location.tell_all_but(args.player, "<action>" + args.player.name + " hugs themself.");
+            args.player.location.tell_all_but(args.player, this.format("<action>{player.title} hugs themself.", args));
         }
         else {
-            args.player.tell("<action>You hug " + this.title);
-            this.tell("<action>" + args.player.title + " hugs you.");
-            args.player.location.tell_all_but([ this, args.player ], "<action>" + args.player.name + " hugs " + this.title);
+            args.player.tell(this.format("<action>You hug {this.title}", args));
+            this.tell(this.format("<action>{player.title} hugs you.", args));
+            args.player.location.tell_all_but([ this, args.player ], this.format("<action>{player.title} hugs {this.title}", args));
         }
     }
 }
@@ -185,7 +256,7 @@ class Player extends Being {
         allPlayers.push(this);
         this.connections = [ ];
         this.saved_location = null;
-        this.moveto(limbo);
+        this.moveto(Objects[Player.limbo]);
 
         this.isWizard = false;
         this.position = 'standing';
@@ -194,9 +265,9 @@ class Player extends Being {
     onLoad() {
         super.onLoad();
         this.connections = [ ];
-        if (this.location != limbo) {
+        if (this.location != Objects[Player.limbo]) {
             this.saved_location = this.location;
-            this.moveto(limbo);
+            this.moveto(Objects[Player.limbo]);
         }
     }
 
@@ -206,7 +277,9 @@ class Player extends Being {
             connectedPlayers.push(this);
 
         if (this.connections.length == 1) {
-            this.moveto(this.saved_location ? this.saved_location : lobby);
+            this.moveto(this.saved_location ? this.saved_location : Objects[Player.lobby]);
+            if (this.location == Objects[Player.limbo])
+                this.moveto(Objects[Player.lobby]);
             connectedPlayers.forEach((player) => { player.tell("<status>" + this.name + " has connected.") });
         }
     }
@@ -217,7 +290,7 @@ class Player extends Being {
 
         if (this.connections.length <= 0) {
             this.saved_location = this.location;
-            this.moveto(limbo);
+            this.moveto(Objects[Player.limbo]);
             connectedPlayers.forEach((player) => { player.tell("<status>" + this.name + " has disconnected.") });
         }
     }
@@ -238,7 +311,7 @@ class Player extends Being {
 
     get_view(player) {
         let view = super.get_view(player);
-        view.pose = this.title + " is " + this.position + " here.";
+        view.brief = this.format("{this.title} is {this.position} here.");
         if (player == this) {
             view.contents = this.contents.map(function (item) {
                 return item.get_view(player);
@@ -269,7 +342,7 @@ class Player extends Being {
                 verbs.push('sit');
         }
         if (all && player.isWizard)
-            verbs.push('teleport', 'examine');
+            verbs.push('teleport', 'examine', 'edit');
         return verbs;
     }
 
@@ -278,16 +351,18 @@ class Player extends Being {
         this.position = 'sitting';
 
         args.player.tell("<action>You sit down on the ground.");
-        args.player.location.tell_all_but(args.player, "<action>" + args.player.name + " sits down on the ground.");
+        args.player.location.tell_all_but(args.player, this.format("<action>{player.name} sits down on the ground.", args));
         this.update_view();
+        this.location.update_contents();
     }
 
     stand(args) {
         this.position = 'standing';
 
         args.player.tell("<action>You stand up.");
-        args.player.location.tell_all_but(args.player, "<action>" + args.player.name + " stands up.");
+        args.player.location.tell_all_but(args.player, this.format("<action>{player.name} stands up.", args));
         this.update_view();
+        this.location.update_contents();
     }
 
     teleport(args) {
@@ -299,9 +374,9 @@ class Player extends Being {
         else {
             let oldwhere = this.location;
             if (this.moveto(args.dobj)) {
-                oldwhere.tell_all_but(args.player, "<action>" + this.title + " disappears in a flash of smoke.");
-                this.location.tell_all_but(args.player, "<action>" + this.title + " appears in a flash of smoke.");
-                args.player.tell("<action>You teleport to " + this.location.title);
+                oldwhere.tell_all_but(args.player, this.format("<action>{this.title} disappears in a flash of smoke.", args));
+                this.location.tell_all_but(args.player, this.format("<action>{this.title} appears in a flash of smoke.", args));
+                args.player.tell(this.format("<action>You teleport to {this.location.title}", args));
             }
             else
                 args.player.tell("<action>You try to teleport but fizzle instead.");
@@ -312,12 +387,65 @@ class Player extends Being {
         if (!args.dobj)
             args.player.tell("I don't see that here.");
         else {
-            args.player.tell(args.dobj.constructor.name + "; " + args.dobj.name + " (#" + args.dobj.id + "): " + args.dobj.title);
+            args.player.tell(this.format("{constructor.name}; {name} (#{id}): {title}", args.dobj));
             if (args.dobj.location)
-                args.player.tell("Its location is " + args.dobj.location.name + " (#" + args.dobj.location.id + ")");
+                args.player.tell(this.format("Its location is {location.name} (#{location.id})", args.dobj));
+            if (args.dobj.exits)
+                args.dobj.exits.forEach(function (exit) {
+                    args.player.tell(this.format("<indent>{name} (#{id}) to {title} (#{dest.id})", exit));
+                }.bind(this));
+        }
+    }
+
+    edit(args) {
+        let words = args.text.match(/^\s*(\S+?)\s+(\S+?)\s+(.*)$/);
+        if (!words) {
+            args.player.tell("Usage: /edit <object> <attribute> <value>");
+            return;
+        }
+
+        let value;
+        try {
+            value = JSON.parse(words[3]);
+        }
+        catch (e) {
+            value = words[3];
+        }
+
+        let item = args.player.find_object(words[1]);
+        if (!item)
+            args.player.tell("I don't see that object here.");
+
+        try {
+            item.edit_by(args.player, words[2], value);
+            args.player.update_view();
+        }
+        catch (e) {
+            args.player.tell(e);
         }
     }
 }
+
+Player.limbo = 18;
+Player.lobby = 19;
+
+Player.createNew = function (name, hash, email) {
+    let player = new Player();
+    player.title = name;
+    player.password = hash;
+    player.email = email;
+    return player.id;
+};
+
+Player.find = function (name) {
+    name = name.toLowerCase();
+    for (let i = 0; i < allPlayers.length; i++) {
+        if (allPlayers[i].name.toLowerCase() == name)
+            return allPlayers[i];
+    }
+    return null;
+};
+
 
 
 class Room extends Thing {
@@ -342,9 +470,9 @@ class Room extends Thing {
         return !this.locked;
     }
 
-    link_rooms(direction, room) {
-        let opposite = Exit.opposite_direction(direction);
-        if (room.exits.some((exit) => { return exit.name == direction }) || room.exits.some((exit) => { return exit.name == opposite }))
+    link_rooms(direction, room, noReturn) {
+        let opposite = !noReturn ? Exit.opposite_direction(direction) : null;
+        if (this.exits.some((exit) => { return exit.name == direction }) || (opposite && room.exits.some((exit) => { return exit.name == opposite })))
             return false;
 
         let exit = new Exit();
@@ -367,6 +495,8 @@ class Room extends Thing {
 
     get_view(player) {
         let view = super.get_view(player);
+        if (this.style)
+            view.style = this.style;
         view.contents = this.contents.filter((obj) => { return obj != player }).map(function (item) {
             return item.get_view(player);
         });
@@ -384,6 +514,13 @@ class Room extends Thing {
         if (all)
             verbs.push('look', 'say', 'emote', 'shout', 'go');
         return verbs;
+    }
+
+    editable_by(player) {
+        let props = super.editable_by(player);
+        if (player.isWizard)
+            props.push('style|object');
+        return props;
     }
 
 
@@ -421,19 +558,23 @@ class Room extends Thing {
     }
 
     go(args) {
-        let name = args.text.toLowerCase();
-        for (let i = 0; i < this.exits.length; i++) {
-            if (this.exits[i].name.toLowerCase().substr(0, name.length) == name) {
-                this.exits[i].invoke(args.player);
-                return;
-            }
+        let exit;
+
+        if (args.dobj)
+            exit = this.exits.find((exit) => { return exit.dest == args.dobj; });
+        else {
+            let name = args.text.toLowerCase();
+            exit = this.exits.find((exit) => { return exit.name.toLowerCase().substr(0, name.length) == name; });
         }
-        args.player.tell("You can't go that way.");
+
+        if (exit)
+            exit.invoke(args.player);
+        else
+            args.player.tell("You can't go that way.");
     }
 
     dig(args) {
         if ((!args.iobj && !args.iobjstr) || !args.dobjstr || (args.prep && args.prep != 'to')) {
-            console.log(args);
             args.player.tell("Usage: /dig <direction> to <room>");
             return;
         }
@@ -441,13 +582,27 @@ class Room extends Thing {
         let room = args.iobj;
         if (!room) {
             room = new Room();
-            room.title = args.iobjstr;
-            args.player.tell("new room created: " + room.title + " (#" + room.id + ")");
+            room.name = args.iobjstr;
+            args.player.tell(this.format("new room created: {name} (#{id})", room));
         }
 
         if (!(room instanceof Room))
             args.player.tell("That isn't a room");
-        else if (!this.link_rooms(args.dobjstr.toLowerCase(), room))
+        else if (!this.link_rooms(args.dobjstr, room))
+            args.player.tell("That direction is already in use by one of the rooms");
+        else
+            this.update_contents();
+    }
+
+    addexit(args) {
+        if (!args.iobj || !args.dobjstr || !args.prep || args.prep != 'to') {
+            args.player.tell("Usage: /addexit <direction> to <room>");
+            return;
+        }
+
+        if (!(args.iobj instanceof Room))
+            args.player.tell("That isn't a room");
+        else if (!this.link_rooms(args.dobjstr, args.iobj, true))
             args.player.tell("That direction is already in use by one of the rooms");
         else
             this.update_contents();
@@ -476,35 +631,57 @@ class Exit extends Thing {
         this.source = null;
         this.dest = null;
         this.hasDoor = false;
+        this.isOpen = true;
     }
 
     get title() { return this.dest.title; }
     set title(v) { /* do nothing */ }
 
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (this.hasDoor)
-            verbs.push('open');
-        if (player.isWizard)
-            verbs.push('remove');
-        return verbs;
+    is_blocked(player) {
+        return this.hasDoor && !this.isOpen;
     }
 
     invoke(player) {
         if (!player.location == this.source)
             return;
 
-        if (player.moveto(this.dest) && player.location == this.dest) {
-            this.source.tell_all_but(player, this.format(this.msg_leave_others, { player: player, direction: this.name }));
+        if (this.is_blocked(player))
+            player.tell(this.format(this.msg_blocked_you));
+        else if (player.moveto(this.dest) && player.location == this.dest) {
+            let opposite = this.dest.exits.find((exit) => { return exit.name == this.name });
 
+            this.source.tell_all_but(player, this.format(this.msg_leave_others, { player: player, direction: this.name }));
             player.tell(this.format(this.msg_success_you, { direction: this.name, dest: this.dest }));
-            // TODO this isn't right... it should find the corresponding exit via the this.dest field
-            this.dest.tell_all_but(player, this.format(this.msg_arrive_others, { player: player, direction: Exit.opposite_direction(this.name) }));
+            this.dest.tell_all_but(player, this.format(this.msg_arrive_others, { player: player, direction: opposite ? opposite : 'somewhere' }));
         }
         else {
             player.tell(this.format(this.msg_fail_you));
         }
     }
+
+
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.hasDoor)
+            verbs.push(this.isOpen ? 'close' : 'open');
+        if (player.isWizard)
+            verbs.push('remove');
+        return verbs;
+    }
+
+    remove(args) {
+        args.text = this.name;
+        this.source.rmexit(args);
+    }
+
+    open(args) {
+
+    }
+
+    close(args) {
+
+    }
+
 
     static opposite_direction(direction) {
         switch (direction) {
@@ -517,25 +694,17 @@ class Exit extends Thing {
             default: return false;
         }
     }
-
-    remove(args) {
-        args.text = this.name;
-        this.source.rmexit(args);
-    }
 }
 Exit.prototype.msg_success_you      = "You go {direction} to {dest.title}";
-Exit.prototype.msg_fail_you         = "You way is blocked.";
+Exit.prototype.msg_fail_you         = "Your way is blocked.";
+Exit.prototype.msg_blocked_you      = "The door is closed.";
 Exit.prototype.msg_leave_others     = "{player.title} leaves {direction}";
 Exit.prototype.msg_arrive_others    = "{player.title} enters from the {direction}";
 
 
-//var Item = function () {
-//    this.name = '';
-//}; 
-//Item.prototype = {
-//Object.setPrototypeOf(Item.prototype, new Thing);
-
 class Item extends Thing {
+
+    get title() { return Utils.properName(this.name).capitalizeAll(); }
 
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
@@ -578,20 +747,20 @@ class Item extends Thing {
         else if (this.location != args.player || args.iobj.location != args.player.location || !this.moveto(args.iobj))
             args.player.tell(this.format("<action>You try to give {this.title} to {iobj.name} but fail somehow.", args));
         else {
-            args.player.tell(this.format("<action>You give {this.title} to {iobj.title}.", args));
-            args.iobj.tell(this.format("<action>{player.title} give you {this.title}.", args));
-            args.player.location.tell_all_but([args.player, args.iobj], this.format("<action>{player.title} gives {this.title} to {iobj.title}.", args));
+            args.player.tell(this.format("<action>You give {this.title} to {iobj.name}.", args));
+            args.iobj.tell(this.format("<action>{player.name} give you {this.title}.", args));
+            args.player.location.tell_all_but([args.player, args.iobj], this.format("<action>{player.name} gives {this.title} to {iobj.name}.", args));
         }
     }
 }
 Item.prototype.msg_take_success_you     = "<action>You pick up {this.title}";
-Item.prototype.msg_take_success_others  = "<action>{player.title} picks up {this.title}";
+Item.prototype.msg_take_success_others  = "<action>{player.name} picks up {this.title}";
 Item.prototype.msg_take_fail_you        = "<action>You can't pick that up";
 Item.prototype.msg_take_fail_others     = "";
 Item.prototype.msg_drop_success_you     = "<action>You drop {this.title}";
-Item.prototype.msg_drop_success_others  = "<action>{player.title} drops {this.title}";
+Item.prototype.msg_drop_success_others  = "<action>{player.name} drops {this.title}";
 Item.prototype.msg_drop_fail_you        = "<action>You can't seem to drop {this.title} here.";
-Item.prototype.msg_drop_fail_others     = "<action>{player.title} tries to drop {this.title}, but fails.";
+Item.prototype.msg_drop_fail_others     = "<action>{player.name} tries to drop {this.title}, but fails.";
 
 
 class UseableItem extends Item {
@@ -603,12 +772,67 @@ class UseableItem extends Item {
     }
 
     use(args) {
-        let partymsg = "<b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying.";
-        args.player.tell("You press the party button.  " + partymsg);
-        args.player.location.tell_all_but(args.player, args.player.name + " pulls out a big button and presses it.  " + partymsg);
+        args.player.tell(this.format(this.msg_use_you, args));
+        args.player.location.tell_all_but(args.player, this.format(this.msg_use_others, args));
     }
 }
 
+class WearableItem extends Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player)
+            verbs.push('wear');
+        return verbs;
+    }
+
+    wear(args) {
+
+    }
+}
+
+class WeildableItem extends Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player)
+            verbs.push('weild');
+        return verbs;
+    }
+
+    weild(args) {
+
+    }
+}
+
+class EdibleItem extends Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player)
+            verbs.push('eat');
+        return verbs;
+    }
+
+    eat(args) {
+
+    }
+}
+
+class DrinkableItem extends Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player)
+            verbs.push('drink');
+        return verbs;
+    }
+
+    drink(args) {
+
+    }
+}
+
+
+//
+// Object Database
+//
 Objects = [
     Root,
     Thing,
@@ -620,70 +844,67 @@ Objects = [
     UseableItem,
 ];
 
-Objects.forEach((obj, index) => { obj.id = index; });
+Root.reservedObjects = 18;
+Objects.forEach((obj, index) => { obj.id = index; });               // Assign the id to each of these, since they wont have one
+Objects = Objects.concat(Array(Root.reservedObjects - Objects.length).fill(null));    // Reserve space for future class objects
 
 
-var limbo = new Room();
-limbo.name = "limbo";
-limbo.title = "Limbo";
-limbo.description = "You are floating in a void of blackness.  You cannot make out anything.";
-
-var firstSaveableObject = Objects.length;
-
-var lobby = new Room();
-lobby.name = "lobby";
-lobby.title = "The Lobby";
-lobby.description = "You are in an empty hotel lobby.  There isn't anything here yet";
-
-let wizard = new Player();
-wizard.isWizard = true;
-wizard.name = "Wizard";
-wizard.title = "Wizzy the Wizard";
-wizard.description = "A short person with a long white beard and a pointy blue hat.";
-wizard.password = "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu";
-
-
+//
+// Initialize Objects
+//
 function initTestObjects() {
+    let limbo = new Room();
+    limbo.name = "Limbo";
+    limbo.description = "You are floating in a void of blackness.  You cannot make out anything.";
+
+    let lobby = new Room();
+    lobby.name = "The Lobby";
+    lobby.description = "You are in an empty hotel lobby.  There isn't anything here yet";
+
+    let wizard = new Player();
+    wizard.isWizard = true;
+    wizard.title = "Wizzy the Wizard";
+    wizard.description = "A short person with a long white beard and a pointy blue hat.";
+    wizard.password = "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu";
+
     let lowely = new Player();
-    lowely.name = "Lowely";
     lowely.title = "Lowely Worm";
     lowely.description = "An anthropormorphic worm with a green hat, and a single big brown boot.";
     lowely.password = "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu";
 
     let coatcheck = new Room();
-    coatcheck.name = "coatcheck";
-    coatcheck.title = "The Coat Check";
+    coatcheck.name = "The Coat Check";
     coatcheck.description = "There is a counter here for checking your coats and belongings, but no one as behind the counter.";
 
     lobby.link_rooms('west', coatcheck);
 
     let doohickey = new Item();
     doohickey.name = "Doohickey";
-    doohickey.title = "A Doohickey";
     doohickey.description = "It's a general purpose tool for anything you want.";
     doohickey.moveto(wizard);
 
     let partybutton = new UseableItem();
-    partybutton.name = "partybutton";
-    partybutton.title = "The Party Button";
+    partybutton.name = "The Party Button";
     partybutton.description = "It's a small box with a big red button labelled \"Party\".";
+    partybutton.msg_use_you = "You press the party button.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying.";
+    partybutton.msg_use_others = "{player.title} pulls out a big button and presses it.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying.";
     partybutton.moveto(wizard);
 
     let ducky = new Being();
     ducky.name = "Ducky";
-    ducky.title = "A Ducky";
     ducky.description = "An small duck is quacking and waddling around here.";
     ducky.moveto(lobby);
     ducky.onLoad = function () { this.annoy() };
     ducky.annoy = function (args) {
         setTimeout(function () {
-            ducky.location.say({ player: ducky, text: "Quack ".repeat(1 + Math.floor(Math.random() * 3)).trim() });
-            ducky.annoy();
-        }, 30000 + Math.random() * 30000);
+            if (this.location)
+                this.location.say({ player: this, text: "Quack ".repeat(1 + Math.floor(Math.random() * 3)).trim() });
+            this.annoy();
+        }.bind(this), 30000 + Math.random() * 30000);
     };
     ducky.annoy();
 }
-initTestObjects();
+//initTestObjects();
 
 
 /*
@@ -699,21 +920,6 @@ let location = ObjectRef(9);
 console.log(location.name, location);
 */
 
-/*
-limbo.test = "object:33";
-console.log(JSON.parse(serializeObject(limbo), function (k, v) {
-    if (typeof v === 'string') {
-        let m = v.match(/^object\:(\d+)$/);
-        if (!m)
-            return v;
-        // TODO this wouldn't work because you can't change the type of the object later
-        if (!Objects[m[1]])
-            Objects[m[1]] = { };
-        return Objects[m[1]];
-    }
-    return v;
-}));
-*/
 
 const saveObject = function (obj) {
     console.log("Saving object " + obj.id);
@@ -731,7 +937,7 @@ const loadObject = function (id, callback) {
 
     //let oid = parseInt(data['id']);
     let tid = parseInt(data['$type']);
-    if (tid < 0 || tid >= firstSaveableObject)
+    if (tid < 0 || tid >= Objects.reservedObjects)
         throw "Unable to load object with a non-standard type id " + tid;
 
     let obj;
@@ -766,7 +972,7 @@ const serializeObject = function (obj) {
             return null;
         else
             return v;
-    });
+    }, 2);
 };
 
 const parseData = function (data) {
@@ -775,7 +981,7 @@ const parseData = function (data) {
     else if (Array.isArray(data))
         return data.map(parseData);
     else if (typeof data === 'string' && data.match(/^function /))
-        return eval("(function(){ return " + data + ";})");
+        return eval("(" + data + ")");
     else if (typeof data === 'object') {
         if (data['$ref']) {
             if (data['$ref'] < Objects.length && Objects[data['$ref']])
@@ -784,7 +990,6 @@ const parseData = function (data) {
                 return loadObject(data['$ref']);
         }
         else {
-            console.log("*** Parsing Plain Object", data);
             let obj = { };
             for (let k in data) {
                 obj[k] = parseData(data[k]);
@@ -801,25 +1006,41 @@ const loadAllObjects = function () {
     let files = fs.readdirSync('objects', 'utf8');
     files.forEach(function (filename) {
         let m = filename.match(r);
-        if (m && m[1] >= firstSaveableObject) // && !Objects[m[1]])     // TODO you shouldn't reload objects that are already loaded, but then the default objects like lobby wont get updated...
+        if (m && m[1] >= Root.reservedObjects && !Objects[m[1]])     // TODO you shouldn't reload objects that are already loaded, but then the default objects like lobby wont get updated...
             loadObject(parseInt(m[1]));
     });
 
     Objects.forEach(function (obj) {
-        if (obj.onLoad)
+        if (obj && obj.onLoad)
             obj.onLoad();
     });
 };
 
 const saveAllObjects = function () {
-    for (let i = firstSaveableObject; i < Objects.length; i++) {
+    for (let i = Root.reservedObjects; i < Objects.length; i++) {
         if (Objects[i])
             saveObject(Objects[i]);
     }
 };
 
+const saveObjectsAsOne = function () {
+    let output = '';
+    for (let i = Root.reservedObjects; i < Objects.length; i++) {
+        if (Objects[i])
+            output += ",\n" + serializeObject(Objects[i]);
+    }
+    output = '[' + output.slice(1) + '\n]';
+    try {
+        fs.writeFileSync('objects/world.json', output, 'utf8');
+    }
+    catch (e) {
+        console.log(e.stack);
+    }
+}
+
 //saveAllObjects();
 loadAllObjects();
+//saveObjectsAsOne();
 
 process.on('exit', function () {
     saveAllObjects();
@@ -833,24 +1054,13 @@ process.on('SIGUSR2', function () {
     process.exit();
 });
 
-
-const createNewPlayer = function (name, hash, email) {
-    let player = new Player();
-    player.name = name;
-    player.title = name;
-    player.password = hash;
-    player.email = email;
-    return player.id;
+const savePeriodically = function () {
+    setTimeout(function () {
+        saveAllObjects();
+        savePeriodically();
+    }, 600000);
 };
-
-const findPlayer = function (name) {
-    name = name.toLowerCase();
-    for (let i = 0; i < allPlayers.length; i++) {
-        if (allPlayers[i].name.toLowerCase() == name)
-            return allPlayers[i];
-    }
-    return null;
-};
+savePeriodically();
 
 
 module.exports = {
@@ -862,12 +1072,7 @@ module.exports = {
     Room,
     Exit,
     Item,
-    limbo,
-    lobby,
-    wizard,
 
     saveAllObjects,
-    createNewPlayer,
-    findPlayer,
 };
 

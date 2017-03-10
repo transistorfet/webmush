@@ -15,7 +15,7 @@ let minPassword = 6;
 let maxPassword = 32;
 
 passport.use(new LocalStrategy(function(username, password, done) {
-    let user = World.findPlayer(username);
+    let user = World.Player.find(username);
     if (!user || !bcrypt.compareSync(password, user.password)) {
         return done(null, false, { message: "Invalid username or password" });
     }
@@ -36,7 +36,6 @@ passport.deserializeUser(function(id, done) {
 
 router.post('/login', function(req, res, next) {
     passport.authenticate('local', function(err, user, info) {
-        console.log(err, user, info);
         if (err) { return next(err); }
         if (!user) { return res.status(400).json({ authenticated: false, error: "Invalid username or password" }); }
         req.logIn(user, function() {
@@ -46,7 +45,7 @@ router.post('/login', function(req, res, next) {
 });
 
 router.put('/signup', function(req, res, next) {
-    if (!req.body.username || World.findPlayer(req.body.username))
+    if (!req.body.username || World.Player.find(req.body.username))
         return res.status(400).json({ authenticated: false, error: "That username is already taken" });
     if (req.body.password.length < minPassword)
         return res.status(400).json({ authenticated: false, error: "Passwords must be at least " + minPassword + " characters long" });
@@ -55,7 +54,7 @@ router.put('/signup', function(req, res, next) {
     // TODO verify email??
 
     let hash = bcrypt.hashSync(req.body.password, saltRounds);
-    let player = World.createNewPlayer(req.body.username, hash, req.body.email);
+    let player = World.Player.createNew(req.body.username, hash, req.body.email);
 
     passport.authenticate('local', function(err, user, info) {
         if (err) { return next(err); }

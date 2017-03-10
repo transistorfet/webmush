@@ -101,7 +101,15 @@ const World = {
     },
 
     go: function (direction) {
+        window.history.pushState({ id: World.view.location.id, from: direction }, 'previous_location');
         websocket.send({ type: 'go', text: direction });
+    },
+
+    back: function (e) {
+        if (e.state && e.state.id) {
+            e.preventDefault();
+            websocket.send({ type: 'go', id: e.state.id });
+        }
     },
 
     look: function (name) {
@@ -117,6 +125,8 @@ const World = {
         websocket.send({ type: 'edit', id: id, attr: attr, text: value });
     },
 };
+
+window.addEventListener('popstate', World.back);
 
 websocket.use(World.receive);
 websocket.notifyClose(World.close);

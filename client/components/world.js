@@ -2,7 +2,8 @@
 'use strict';
 
 const m = require('mithril');
-const parseDecorations = require('./decorations');
+const Decorations = require('./decorations');
+const View = require('./views');
 
 const World = require('../model');
 
@@ -35,7 +36,7 @@ const WorldLogs = {
 
     view: function (vnode) {
         return vnode.attrs.logs.map(function (line) {
-            return m('li', parseDecorations(line));
+            return m('li', Decorations.parse(line));
         });
     },
 };
@@ -58,76 +59,6 @@ const WorldInput = {
     },
 };
 
-const ViewBox = {
-    expand: true,
-    view: function (vnode) {
-        if (!vnode.state.expand) {
-            return m('div[class=viewbox]', vnode.attrs, [
-                m('a', { class: 'viewbox-expand', href: '#', onclick: () => { vnode.state.expand = true; } }, 'more'),
-                vnode.children.slice(0, 2),
-            ]);
-        }
-        else {
-            return m('div[class=viewbox]', vnode.attrs, [
-                m('a', { class: 'viewbox-expand', href: '#', onclick: () => { vnode.state.expand = false; } }, 'less')
-            ].concat(vnode.children));
-        }
-    },
-}
-
-const EditableField = {
-    value: '',
-    editing: false,
-
-    onupdate: function (vnode) {
-        vnode.dom.focus();
-    },
-
-    startEdit: function () {
-        this.editing = true;
-        this.value = '';
-    },
-
-    endEdit: function (obj, attr, value) {
-        this.editing = false;
-        if (obj[attr] != value) {
-            console.log("NEW", this, arguments);
-            World.editAttr(obj.id, attr, value);
-        }
-        else
-            console.log("no change");
-    },
-
-    setValue: function (value) {
-        this.value = value;
-    },
-
-    keyDown: function (e) {
-        if (e.key == "Escape")
-            this.editing = false;
-    },
-
-    view: function (vnode) {
-        if (vnode.state.editing)
-            return m('textarea', Object.assign({
-                oninput: m.withAttr('value', this.setValue.bind(this)),
-                onblur: m.withAttr('value', this.endEdit.bind(this, vnode.attrs.obj, vnode.attrs.attr)),
-                onkeydown: this.keyDown.bind(this),
-            }, vnode.attrs), this.value || vnode.children);
-        else
-            return m('div', Object.assign({ onclick: this.startEdit.bind(this) }, vnode.attrs), vnode.children);
-    },
-};
-
-const Field = {
-    view: function (vnode) {
-        if (vnode.attrs.obj.editable.indexOf(vnode.attrs.attr) == -1)
-            return m('div', vnode.attrs, vnode.attrs.obj[vnode.attrs.attr]);
-        else
-            return m(EditableField, vnode.attrs, vnode.attrs.obj[vnode.attrs.attr]);
-    },
-};
-
 const WorldView = {
     view: function (vnode) {
         return [
@@ -141,28 +72,25 @@ const WorldView = {
 const WorldViewLocation = {
     view: function (vnode) {
         if (!vnode.attrs.location)
-            return m(ViewBox, { class: 'location-info' }, "You don't seem to be... anywhere");
+            return m(View.Box, { class: 'location-info' }, "You don't seem to be... anywhere");
 
-        return m(ViewBox, { class: 'location-info' }, [
+        let style = vnode.attrs.location.style ? ( typeof vnode.attrs.location.style == 'string' ? { box: vnode.attrs.location.style } : vnode.attrs.location.style ) : { };
+
+        return m(View.Box, { class: 'location-info', style: style.box ? style.box : '' }, [
             m('span', { class: 'tinylabel' }, "You are in"),
-            m(Field, { class: 'title', obj: vnode.attrs.location, attr: 'title' }),
-            m(Field, { class: 'description', obj: vnode.attrs.location, attr: 'description' }),
+            m(View.Field, { class: 'title', obj: vnode.attrs.location, attr: 'title', style: style.title ? style.title : '' }),
+            m(View.Field, { class: 'description', obj: vnode.attrs.location, attr: 'description', style: style.description ? style.description : '' }),
             m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.location })),
             m('span', { class: 'tinylabel' }, "Exits"),
             m('table', { class: 'exits' }, vnode.attrs.location.exits.map(function (exit) {
                 return m('tr', [
-                    m('td', m('a', { href: "#", onclick: World.go.bind(World, exit.name) }, exit.name)),
+                    m('td', m('a', { onclick: World.go.bind(World, exit.name) }, exit.name)),
                     m('td', exit.title),
                     m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: exit })),
                 ]);
             })),
             m('span', { class: 'tinylabel' }, "Also here are"),
-            m('table', { class: 'contents' }, vnode.attrs.location.contents.map(function (item) {
-                return m('tr', [
-                    m('td', m('a', { href: "#", onclick: World.look.bind(World, item.name) }, item.pose ? item.pose : item.title)),
-                    m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
-                ]);
-            })),
+            m(WorldViewContents, { contents: vnode.attrs.location.contents }),
         ]);
     },
 };
@@ -172,18 +100,13 @@ const WorldViewPlayer = {
         if (!vnode.attrs.player)
             return [];
 
-        return m(ViewBox, { class: 'player-info' }, [
+        return m(View.Box, { class: 'player-info' }, [
             m('span', { class: 'tinylabel' }, "You are"),
-            m(Field, { class: 'title', obj: vnode.attrs.player, attr: 'title' }),
-            m(Field, { class: 'description', obj: vnode.attrs.player, attr: 'description' }),
+            m(View.Field, { class: 'title', obj: vnode.attrs.player, attr: 'title' }),
+            m(View.Field, { class: 'description', obj: vnode.attrs.player, attr: 'description' }),
             m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.player })),
             m('span', { class: 'tinylabel' }, "You are carrying"),
-            m('table', { class: 'contents' }, vnode.attrs.player.contents.map(function (item) {
-                return m('tr', [
-                    m('td', m('a', { href: "#", onclick: World.look.bind(World, item.name) }, item.title)),
-                    m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
-                ]);
-            })),
+            m(WorldViewContents, { contents: vnode.attrs.player.contents }),
         ]);
     },
 };
@@ -193,11 +116,24 @@ const WorldViewDetails = {
         if (!vnode.attrs.details)
             return [];
 
-        return m(ViewBox, { class: 'details-info', /* onclick: function() { World.view.details = null; } */ }, [
-            m('span', { class: 'tinylabel' }, "You are looking at"),
-            m(Field, { class: 'title', obj: vnode.attrs.details, attr: 'title' }),
-            m(Field, { class: 'description', obj: vnode.attrs.details, attr: 'description' }),
+        return m(View.Box, { class: 'details-info' }, [
+            m('span', { class: 'tinylabel', onclick: () => { World.view.details = null; } }, "You are looking at"),
+            m(View.Field, { class: 'title', obj: vnode.attrs.details, attr: 'title' }),
+            m(View.Field, { class: 'description', obj: vnode.attrs.details, attr: 'description' }),
         ]);
+    },
+};
+
+const WorldViewContents = {
+    view: function (vnode) {
+        return m('table', { class: 'contents' }, vnode.attrs.contents.map(function (item) {
+            return m('tr', [
+                // TODO icons???
+                m('td', m('span', { class: 'small-icon', style: item.icon ? item.icon : '' })),
+                m('td', m('a', { onclick: World.look.bind(World, item.name) }, item.brief ? item.brief : item.title)),
+                m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
+            ]);
+        }));
     },
 };
 
@@ -210,7 +146,7 @@ const WorldVerbList = {
         verbs.push("(");
         vnode.attrs.item.verbs.forEach(function (verb) {
             let parts = verb.split('|');
-            verbs.push(m('a', { href: "#", onclick: World.doVerb.bind(World, parts[0], vnode.attrs.item) }, parts[0]));
+            verbs.push(m('a', { onclick: World.doVerb.bind(World, parts[0], vnode.attrs.item) }, parts[0]));
             verbs.push(", ");
         });
         verbs.pop();

@@ -10,21 +10,23 @@ let closeCallback = null;
 
 const connect = function ()
 {
+    if (ws)
+        return;
+
     console.log('opening websocket connection');
     ws = new WebSocket('ws://' + window.location.host + '/socket');
 
-    ws.addEventListener('error', function (m) {
-        console.log("error");
+    ws.addEventListener('error', function (msg) {
+        console.log("error", msg);
         errors += 1;
     });
 
-    ws.addEventListener('open', function (m) {
+    ws.addEventListener('open', function (msg) {
         console.log("websocket connection open");
         send({ type: 'connect' });
     });
 
     ws.addEventListener('close', onClose);
-
     ws.addEventListener('message', onMsg);
 }
 
@@ -32,6 +34,7 @@ const onClose = function (msg) {
     if (closeCallback)
         closeCallback(msg);
     console.log("websocket connection closed", msg);
+    ws = null;
     if (msg.code == 4001)
         m.route.set('/login');
     else if (msg.code == 1001)

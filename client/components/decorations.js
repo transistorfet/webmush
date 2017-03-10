@@ -13,6 +13,7 @@ let decorations = {
     'chat': { class: "chat" },
     'shout': { class: "shout" },
     'action': { class: "action" },
+    'indent': { style: "padding-left: 1em;" },
 };
 
 const parseDecorations = function (text) {
@@ -37,5 +38,8 @@ const Decorated = {
     },
 };
 
-module.exports = parseDecorations;
+module.exports = {
+    parse: parseDecorations,
+    Decorated,
+};
 

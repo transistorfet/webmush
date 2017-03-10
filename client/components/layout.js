@@ -33,10 +33,11 @@ const SideNav = {
             m('li', [
                 m('a', { href: "#" }, "Places"),
                 m('ul', [
-                    m('li', m('a', { href: "/home" }, "Home")),
+                    m('li', m('a', { href: "/home", oncreate: m.route.link }, "Home")),
+                    m('li', m('a', { href: "/world", oncreate: m.route.link }, "World")),
                 ]),
             ]),
-            m('li', m('a', { href: "/things" }, "Things")),
+            m('li', m('a', { href: "/profile", oncreate: m.route.link }, "Profile")),
             m('div', { id: 'user-nav' }, m(UserNav)),
         ]);
     },

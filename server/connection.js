@@ -2,6 +2,7 @@
 'use strict';
 
 let World = require('./world');
+let Utils = require('./utils');
 
 class Connection {
     constructor(ws) {
@@ -86,44 +87,39 @@ const onMsg = function (ws, msg)
         ws.player.location.emote(args);
     }
     else if (msg.type == 'go') {
+        if (msg.id && msg.id >= 0 && msg.id < World.Objects.length)
+            args.dobj = World.Objects[msg.id];
         ws.player.location.go(args);
     }
     else if (msg.type == 'do') {
+        args.verb = msg.verb = msg.verb.toLowerCase();
+
         if (msg.id && msg.id >= 0 && msg.id < World.Objects.length)
             args.dobj = World.Objects[msg.id];
-        else if (msg.text) {
-            let m = msg.text.match(parse);
-            if (!m)
-                args.dobj = ws.player.match_object(msg.text);
-            else {
-                args.dobjstr = m[1];
-                args.prep = m[2];
-                args.iobjstr = m[3];
-                args.dobj = ws.player.match_object(args.dobjstr);
-                args.iobj = ws.player.match_object(args.iobjstr);
-            }
-        }
+        else if (msg.text)
+            Utils.parseObjects(args, msg.text);
 
-        if (args.dobj && args.dobj.can_do(ws.player, msg.verb))
+        if (args.dobj && args.dobj.can_do(args.player, msg.verb))
             args.dobj[msg.verb].apply(args.dobj, [args]);
-        else if (ws.player.can_do(ws.player, msg.verb))
-            ws.player[msg.verb].apply(ws.player, [args]);
-        else if (ws.player.location.can_do(ws.player, msg.verb))
-            ws.player.location[msg.verb].apply(ws.player.location, [args]);
+        else if (args.player.can_do(args.player, msg.verb))
+            args.player[msg.verb].apply(args.player, [args]);
+        else if (args.player.location.can_do(args.player, msg.verb))
+            args.player.location[msg.verb].apply(args.player.location, [args]);
         else
-            ws.player.tell("I don't understand that.");
+            args.player.tell("I don't understand that.");
     }
     else if (msg.type == 'edit') {
         if (!msg.id || msg.id < 0 || msg.id >= World.Objects.length)
-            ws.player.tell("Invalid object provided for attribute edit");
+            args.player.tell("Invalid object provided for attribute edit");
         let item = World.Objects[msg.id];
 
-        let editables = item.editable_by(ws.player);
-        if (!msg.attr || editables.indexOf(msg.attr) == -1)
-            ws.player.tell("You aren't allowed to edit that attribute");
-
-        item[msg.attr] = msg.text;
-        ws.player.update_view();
+        try {
+            item.edit_by(args.player, msg.attr, msg.text);
+            args.player.update_view();
+        }
+        catch (e) {
+            args.player.tell(e);
+        }
     }
     else if (msg.type == 'help') {
         ws.player.tell("Commands: " + ws.player.verbs_for(ws.player, true).concat(ws.player.location.verbs_for(ws.player, true)).join(', '));
@@ -131,39 +127,6 @@ const onMsg = function (ws, msg)
 
     return;
 };
-
-const prepositions = [
-    "with",
-    "using",
-    "at",
-    "to",
-    "in front of",
-    "in",
-    "inside",
-    "into",
-    "on top of",
-    "on",
-    "onto",
-    "upon",
-    "out of",
-    "from inside",
-    "from",
-    "over",
-    "through",
-    "under",
-    "underneath",
-    "beneath",
-    "behind",
-    "beside",
-    "for",
-    "about",
-    "is",
-    "as",
-    "off",
-    "off of",
-];
-
-let parse = new RegExp('^(.*?)\\s+(' + prepositions.join('|') + ')\\s+(.*)$');
 
 module.exports = onConnect;
 
