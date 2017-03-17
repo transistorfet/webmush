@@ -1,0 +1,17 @@
+{
+  "theme/world.css": {
+    "name": "theme/world.css",
+    "mimetype": "text/css",
+    "public": true
+  },
+  "font/IndieFlower.tff": {
+    "name": "Indie Flower",
+    "mimetype": "application/x-font-ttf",
+    "public": true
+  },
+  "img/icons.png": {
+    "name": "Icons",
+    "mimetype": "image/png",
+    "public": true
+  }
+}

@@ -2,7 +2,9 @@
 'use strict';
 
 const fs = require('fs');
+
 const Utils = require('./utils');
+const Style = require('../lib/style');
 
 var Objects = [ ];
 
@@ -36,7 +38,7 @@ class Root {
     recycle() {
         // TODO check to make sure there are no references?
         Objects[this.id] = null;
-        fs.unlinkSync('objects/'+this.id+'.json');
+        fs.unlinkSync('data/objects/'+this.id+'.json');
         this.id = -1;
         this.recycled = true;
     }
@@ -102,11 +104,6 @@ class Root {
         return null;
     }
 
-
-    tell(text) {
-        // do nothing
-    }
-
     moveto(location) {
         if (!location || this.location == location)
             return false;
@@ -132,9 +129,18 @@ class Root {
         return true;
     }
 
+
     acceptable(obj) {
         return false;
     }
+
+    tell(text) {
+        // do nothing
+    }
+
+    get title() { return this.name.capitalize(); }
+    set title(t) { this.name = t; }
+
 
     update_contents() {
         this.contents.map(function (item) {
@@ -147,13 +153,31 @@ class Root {
         return [];
     }
 
-    can_do(player, verb) {
-        let verbs = this.verbs_for(player, true);
-        return verbs.find((i) => { return i.split('|')[0] == verb; });
+    do_verb_for(player, verb, args) {
+        //'give/put|this to/in object'
+        let signature = this.verbs_for(player, true).find((v) => { return v.split('|').shift().split('/').indexOf(verb) != -1; });
+        if (!signature)
+            return false;
+        //let m = signature.match(/^(.+?)(?:\/.*?)?(?:\|(.+?)(?: (.*?) (.*))?)?$/);
+        //console.log("DO", signature, m);
+
+        let parts = signature.split('|');
+        let funcname = parts[0].split('/', 1)[0];
+        // TODO do type checking
+        if (parts[1] && parts[1] == 'prompt') {
+            if (!args.response) {
+                args.player.prompt(this.id, funcname, this.get_form_for(funcname, args.player));
+                return true;
+            }
+            else
+                this.validate_form_for(funcname, args.player, args.response);
+        }
+        this[funcname].apply(this, [args]);
+        return true;
     }
 
     editable_by(player) {
-        return ['name', 'aliases|array', 'title'];
+        return ['name', 'aliases|a', 'title'];
     }
 
     edit_by(player, attr, value) {
@@ -166,22 +190,50 @@ class Root {
         if (!info)
             throw "You aren't allowed to edit that attribute";
 
-        let typename = info.split('|').splice(1).shift();
-        if (typename == 'array') {
-            if (!Array.isArray(value))
-                throw "The value for that attribute must be an array";
-        }
-        else if (typeof value != (typename ? typename : 'string'))
-            throw "The value for that attribute must be a " + (typename ? typename : 'string');
+        let typename = info.split('|').pop();
+        if (!typename) typename = 's';
+        if (typename in typeLetters && typeLetters[typename](value, this))
+            throw "The value for that attribute must be an " + typename;
 
         this[attr] = value;
         this.update_contents();
         return true;
     }
 
-    get title() { return this.name.capitalize(); }
-    set title(t) { this.name = t; }
+    get_form_for(name, player) {
+        return null;
+    }
+
+    validate_form_for(name, player, response) {
+        let errors = [ ];
+        let form = this.get_form_for(name, player);
+
+        for (let i in form.form) {
+            let value = response[form.form[i].name];
+            if (form.form[i].type == 'text') {
+                if (typeof value != 'string')
+                    errors.push(form.form[i].name + " must be a string.");
+            }
+            else if (form.form[i].type == 'file') {
+                if (typeof value != 'string' || value.match(/^(\/\w+)+/))
+                    errors.push(form.form[i].name + " is an invalid filename.");
+            }
+        }
+
+        if (errors.length > 0)
+            throw errors;
+    }
 }
+
+var typeLetters = {
+    n: (v) => { return typeof v == 'number'; },
+    s: (v) => { return typeof v == 'string'; },
+    a: (v) => { return Array.isArray(v); },
+    o: (v) => { return v instanceof Root; },
+    t: (v, t) => { return v == t; },
+};
+
+
 
 class Thing extends Root {
     constructor() {
@@ -224,13 +276,6 @@ class Being extends Thing {
         let verbs = super.verbs_for(player, all);
         verbs.push('hug');
         return verbs;
-    }
-
-    editable_by(player) {
-        let props = super.editable_by(player);
-        //if (player.isWizard || this == player)
-        //    props.push('');
-        return props;
     }
 
     hug(args) {
@@ -305,6 +350,10 @@ class Player extends Being {
         this.connections.forEach((conn) => { if (conn) conn.send_json(msg); });
     }
 
+    prompt(id, respond, form) {
+        this.connections.forEach((conn) => { if (conn) conn.send_json({ type: 'prompt', id: id, respond: respond, form: form }); });
+    }
+
     acceptable(obj) {
         return !(obj instanceof Being);
     }
@@ -340,10 +389,19 @@ class Player extends Being {
                 verbs.push('stand');
             if (this.position != 'sitting' || all)
                 verbs.push('sit');
+
+            verbs.push('profile|prompt', 'theme|prompt');
         }
         if (all && player.isWizard)
-            verbs.push('teleport', 'examine', 'edit');
+            verbs.push('teleport', 'examine', 'edit', 'verb');
         return verbs;
+    }
+
+    get_prefs() {
+        return {
+            audio: false,
+            theme: Style.getCSS(this._theme ? this._theme : '/media/default/theme/world.css', 'body'),
+        };
     }
 
 
@@ -364,6 +422,7 @@ class Player extends Being {
         this.update_view();
         this.location.update_contents();
     }
+
 
     teleport(args) {
         // TODO add check to see if args.player == this? and/or allow wizards to teleport other people
@@ -424,6 +483,88 @@ class Player extends Being {
             args.player.tell(e);
         }
     }
+
+    verb(args) {
+        if (!args.reponse) {
+            if (!args.iobj || !args.dobjstr || !args.prep)
+                args.player.tell("Usage: /verb <attribute> for <object>");
+            else
+                args.player.prompt(this.id, 'verb', { label: "Editing " + args.dobjstr + " for #" + args.iobj.id, fields: [ { name: 'function', type: 'textarea', value: args.iobj[args.dobjstr].toString() } ] });
+            // TODO you have a serious problem here, where the verb editor is part of the user/builder object, but it's editing another object's data; and you need a way
+            //      to find the object during the response, so either the verb editor needs to be on all objects, and you activate it on the object which contains the verb,
+            //      or you need to pass the object id to the prompt and receive it back; via a hidden field in the form i guess
+        }
+        else {
+            console.log(args.response);
+        }
+    }
+
+    profile(args) {
+        console.log("PROF", args.response);
+        if (!args.response)
+            args.player.prompt(this.id, 'profile', this.get_form_for('profile', args.player));
+        else {
+            console.log(args.response);
+            try {
+                this.validate_form_for('profile', args.player, args.response);
+            }
+            catch (e) {
+                console.log("FAILED", e);
+                //args.player.tell_msg({});
+            }
+            this.style = args.response;
+            this.update_contents();
+        }
+    }
+
+    theme(args) {
+        if (!args.response)
+            args.player.prompt(this.id, 'theme', this.get_form_for('theme', args.player));
+        else {
+            console.log(args.response);
+            try {
+                this.validate_form_for('theme', args.player, args.response);
+            }
+            catch (e) {
+                console.log("FAILED", e);
+                //args.player.tell_msg({});
+            }
+            if (args.response.theme_switch == 'cssfile')
+                this._theme = args.response.theme.cssfile;
+            else
+                this._theme = args.response.theme;
+            //this.update_contents();
+            // TODO send update prefs message
+            args.player.tell_msg({ type: 'prefs', prefs: args.player.get_prefs() });
+        }
+    }
+
+    get_form_for(name, player) {
+        switch (name) {
+            case 'profile':
+                return { label: "Your Profile", fields: [
+                    { name: 'picture', label: 'Avatar', type: 'file', filter: '^image', value: this.profile.picture ? this.profile.picture : '' },
+                    { name: 'aliases', label: 'Aliases', type: 'text', value: this.aliases ? this.aliases : '' },
+                ] };
+            case 'theme':
+                return { label: "Editing Site Theme", fields: [
+                    { name: 'theme', type: 'switch', value: typeof this._theme == 'string' ? 'cssfile' : 'options', options: [
+                        { name: 'cssfile', label: 'CSS File', fields: [
+                            { name: 'cssfile', type: 'file', filter: 'text/css', value: typeof this._theme == 'string' ? this._theme : '' },
+                        ] },
+                        { name: 'options', label: 'Options', fields: [
+                            { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this._theme ? this._theme.background : '' },
+                            { name: 'font', label: 'Font', type: 'text', value: this._theme ? this._theme.font : '' },
+                            { name: 'box', label: 'Box CSS', type: 'text', value: this._theme ? this._theme.box : '' },
+                            { name: 'title', label: 'Title CSS', type: 'text', value: this._theme ? this._theme.title : '' },
+                            { name: 'description', label: 'Description CSS', type: 'text', value: this._theme ? this._theme.description : '' },
+                        ] },
+                    ] },
+                ] };
+            default:
+                return super.get_form_for(name, player);
+        }
+    }
 }
 
 Player.limbo = 18;
@@ -470,33 +611,12 @@ class Room extends Thing {
         return !this.locked;
     }
 
-    link_rooms(direction, room, noReturn) {
-        let opposite = !noReturn ? Exit.opposite_direction(direction) : null;
-        if (this.exits.some((exit) => { return exit.name == direction }) || (opposite && room.exits.some((exit) => { return exit.name == opposite })))
-            return false;
-
-        let exit = new Exit();
-        exit.name = direction;
-        exit.source = this;
-        exit.dest = room;
-        this.exits.push(exit);
-
-        if (opposite) {
-            let rexit = new Exit();
-            rexit.name = opposite;
-            rexit.source = room;
-            rexit.dest = this;
-            room.exits.push(rexit);
-        }
-
-        return true;
-    }
-
-
     get_view(player) {
         let view = super.get_view(player);
         if (this.style)
-            view.style = this.style;
+            view.style = Style.getCSS(this.style, '.viewbox.location');
+        if (this.audio)
+            view.audio = this.audio;
         view.contents = this.contents.filter((obj) => { return obj != player }).map(function (item) {
             return item.get_view(player);
         });
@@ -510,7 +630,7 @@ class Room extends Thing {
         let verbs = super.verbs_for(player, all);
         verbs.push('favorite');
         if (player.isWizard)
-            verbs.push('dig', 'addexit', 'rmexit');
+            verbs.push('dig', 'addexit', 'rmexit', 'customize');
         if (all)
             verbs.push('look', 'say', 'emote', 'shout', 'go');
         return verbs;
@@ -518,28 +638,19 @@ class Room extends Thing {
 
     editable_by(player) {
         let props = super.editable_by(player);
-        if (player.isWizard)
-            props.push('style|object');
+        //if (player.isWizard)
+        //    props.push('style|object');
         return props;
     }
 
 
     look(args) {
-        if (!args.text) {
+        if (!args.text)
             args.player.update_view('location');
-        }
-        else {
-            if (args.dobj) {
-                args.player.tell_msg({
-                    type: 'update',
-                    section: 'details',
-                    details: args.dobj.get_view(args.player),
-                });
-            }
-            else {
-                args.player.tell("You don't see that here.");
-            }
-        }
+        else if (args.dobj)
+            args.player.tell_msg({ type: 'update', details: args.dobj.get_view(args.player) });
+        else
+            args.player.tell("You don't see that here.");
     }
 
     say(args) {
@@ -571,6 +682,29 @@ class Room extends Thing {
             exit.invoke(args.player);
         else
             args.player.tell("You can't go that way.");
+    }
+
+
+    link_rooms(direction, room, noReturn) {
+        let opposite = !noReturn ? Exit.opposite_direction(direction) : null;
+        if (this.exits.some((exit) => { return exit.name == direction }) || (opposite && room.exits.some((exit) => { return exit.name == opposite })))
+            return false;
+
+        let exit = new Exit();
+        exit.name = direction;
+        exit.source = this;
+        exit.dest = room;
+        this.exits.push(exit);
+
+        if (opposite) {
+            let rexit = new Exit();
+            rexit.name = opposite;
+            rexit.source = room;
+            rexit.dest = this;
+            room.exits.push(rexit);
+        }
+
+        return true;
     }
 
     dig(args) {
@@ -622,6 +756,38 @@ class Room extends Thing {
         });
         args.player.tell((before - this.exits.length) + " exits removed");
         this.update_contents();
+    }
+
+    customize(args) {
+        if (!args.response)
+            args.player.prompt(this.id, 'customize', this.get_form_for('customize', args.player));
+        else {
+            console.log(args.response);
+            try {
+                this.validate_form_for('customize', args.player, args.response);
+            }
+            catch (e) {
+                console.log("FAILED", e);
+                //args.player.tell_msg({});
+            }
+            this.style = args.response;
+            this.update_contents();
+        }
+    }
+
+    get_form_for(name, player) {
+        switch (name) {
+            case 'customize':
+                return { label: "Customize style for \"" + this.title + "\"", fields: [
+                    { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this.style ? this.style.background : '' },
+                    { name: 'font', label: 'Font', type: 'text', value: this.style ? this.style.font : '' },
+                    { name: 'box', label: 'Box CSS', type: 'text', value: this.style ? this.style.box : '' },
+                    { name: 'title', label: 'Title CSS', type: 'text', value: this.style ? this.style.title : '' },
+                    { name: 'description', label: 'Description CSS', type: 'text', value: this.style ? this.style.description : '' },
+                ] };
+            default:
+                return super.get_form_for(name, player);
+        }
     }
 }
 
@@ -711,7 +877,7 @@ class Item extends Thing {
         if (this.location == player || all)
             verbs.push('drop', 'give|t');
         if (this.location == player.location || all)
-            verbs.push('pickup');
+            verbs.push('pickup/take');
         return verbs;
     }
 
@@ -924,7 +1090,7 @@ console.log(location.name, location);
 const saveObject = function (obj) {
     console.log("Saving object " + obj.id);
     try {
-        fs.writeFileSync('objects/'+obj.id+'.json', serializeObject(obj), 'utf8');
+        fs.writeFileSync('data/objects/'+obj.id+'.json', serializeObject(obj), 'utf8');
     }
     catch (e) {
         console.log(e.stack);
@@ -933,7 +1099,7 @@ const saveObject = function (obj) {
 
 const loadObject = function (id, callback) {
     console.log("Loading object " + id);
-    let data = JSON.parse(fs.readFileSync('objects/'+id+'.json', 'utf8'));
+    let data = JSON.parse(fs.readFileSync('data/objects/'+id+'.json', 'utf8'));
 
     //let oid = parseInt(data['id']);
     let tid = parseInt(data['$type']);
@@ -1003,7 +1169,7 @@ const parseData = function (data) {
 
 const loadAllObjects = function () {
     let r = /^(\d+)\.json$/;
-    let files = fs.readdirSync('objects', 'utf8');
+    let files = fs.readdirSync('data/objects', 'utf8');
     files.forEach(function (filename) {
         let m = filename.match(r);
         if (m && m[1] >= Root.reservedObjects && !Objects[m[1]])     // TODO you shouldn't reload objects that are already loaded, but then the default objects like lobby wont get updated...
@@ -1031,7 +1197,7 @@ const saveObjectsAsOne = function () {
     }
     output = '[' + output.slice(1) + '\n]';
     try {
-        fs.writeFileSync('objects/world.json', output, 'utf8');
+        fs.writeFileSync('data/objects/world.json', output, 'utf8');
     }
     catch (e) {
         console.log(e.stack);

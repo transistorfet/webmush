@@ -7,6 +7,7 @@ let Utils = require('./utils');
 class Connection {
     constructor(ws) {
         this.ws = ws;
+        this.$nosave = true;
     }
 
     send_log(text) {
@@ -28,14 +29,16 @@ const onConnect = function (ws, req, next)
     }
     else {
         console.log('websocket connection');
-        if (!req.user.player || req.user.player < 0 || req.user.player >= World.Objects.length || !(World.Objects[req.user.player] instanceof World.Player)) {
+        if (!req.user.player) {
             console.log("Error: invalid player number");
             ws.close(4002, "Invalid Player");
             return;
         }
 
-        ws.player = World.Objects[req.user.player];
+        //ws.player = World.Objects[req.user.player];
+        ws.player = req.user.player;
 
+        /*
         let connection = {
             $nosave: true,
             send_log(text) {
@@ -47,13 +50,13 @@ const onConnect = function (ws, req, next)
                 ws.send(JSON.stringify(data));
             }
         };
-        // TODO this causes a circular references when saving player object because the ws is stored in the object rather than as a closure like the above one does
-        //let connection = new Connection(ws);
+        */
+        let connection = new Connection(ws);
 
         ws.player.connect(connection);
 
         ws.on('close', function (msg) {
-            console.log('websocket connection lost for', ws.player ? ws.player.name + ' (' + ws.player.id + ')' : 'unconnected player');
+            console.log('websocket connection lost for', ws.player ? ws.player.name + ' (#' + ws.player.id + ')' : 'unconnected player');
             if (ws.player)
                 ws.player.disconnect(connection);
         });
@@ -94,11 +97,16 @@ const onMsg = function (ws, msg)
     else if (msg.type == 'do') {
         args.verb = msg.verb = msg.verb.toLowerCase();
 
-        if (msg.id && msg.id >= 0 && msg.id < World.Objects.length)
-            args.dobj = World.Objects[msg.id];
+        if (msg.id) {
+            if (msg.id >= 0 && msg.id < World.Objects.length)
+                args.dobj = World.Objects[msg.id];
+            else
+                return args.player.tell("Invalid object provided for verb");
+        }
         else if (msg.text)
             Utils.parseObjects(args, msg.text);
 
+        /*
         if (args.dobj && args.dobj.can_do(args.player, msg.verb))
             args.dobj[msg.verb].apply(args.dobj, [args]);
         else if (args.player.can_do(args.player, msg.verb))
@@ -107,10 +115,17 @@ const onMsg = function (ws, msg)
             args.player.location[msg.verb].apply(args.player.location, [args]);
         else
             args.player.tell("I don't understand that.");
+        */
+
+        if (!args.dobj || !args.dobj.do_verb_for(args.player, msg.verb, args))
+            if (!args.player.do_verb_for(args.player, msg.verb, args))
+                if (!args.player.location.do_verb_for(args.player, msg.verb, args))
+                    if (!args.iobj || !args.iobj.do_verb_for(args.player, msg.verb, args))
+                        args.player.tell("I don't understand that.");
     }
     else if (msg.type == 'edit') {
         if (!msg.id || msg.id < 0 || msg.id >= World.Objects.length)
-            args.player.tell("Invalid object provided for attribute edit");
+            return args.player.tell("Invalid object provided for attribute edit");
         let item = World.Objects[msg.id];
 
         try {
@@ -121,8 +136,32 @@ const onMsg = function (ws, msg)
             args.player.tell(e);
         }
     }
+    else if (msg.type == 'respond') {
+        if (!msg.id || msg.id < 0 || msg.id >= World.Objects.length)
+            return args.player.tell("Invalid object provided for prompt response");
+        let item = World.Objects[msg.id];
+
+        args.response = msg.response;
+        try {
+            if (!item.do_verb_for(args.player, msg.respond, args))
+                return args.player.tell("You can't respond to that");
+        }
+        catch (e) {
+            if (typeof e == 'string' || Array.isArray(e))
+                args.player.send_msg({ type: 'prompt-update', errors: typeof e == 'string' ? [ e ] : e });
+            else
+                console.log(e.stack);
+        }
+    }
+    else if (msg.type == 'get') {
+        if (msg.section == 'prefs') {
+            let data = { type: 'prefs', prefs: args.player.get_prefs() };
+            console.log("WS TX", data);
+            ws.send(JSON.stringify(data));      // We only send to the requesting connection, and not all user connections
+        }
+    }
     else if (msg.type == 'help') {
-        ws.player.tell("Commands: " + ws.player.verbs_for(ws.player, true).concat(ws.player.location.verbs_for(ws.player, true)).join(', '));
+        ws.player.tell("Commands: " + ws.player.verbs_for(ws.player, true).concat(ws.player.location.verbs_for(ws.player, true)).map((item) => { return item.split('|')[0]; }).join(', '));
     }
 
     return;

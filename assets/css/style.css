@@ -32,6 +32,7 @@ a:visited {
     color: #4B1559;
 }
 
+
 #content {
     float: left;
     overflow: auto;
@@ -77,16 +78,31 @@ a:visited {
 }
 
 .viewbox {
-    border: 1px solid #235915;
+    border: 1px solid black;
     border-radius: 6px;
     padding: 4px;
     margin-top: 4px;
 }
 
+.viewbox textarea,.viewbox input[type="text"] {
+    width: calc(100% - 4px);
+}
+
+.viewbox-expand {
+    font-size: 0.6em;
+    float: right;
+}
+
+.column-toggle {
+    display: none;
+}
+
 @media screen and (min-width: 1000px) {
     body {
-        width: 1000px;
-        margin: 0 auto;
+        width: auto;
+        max-width: 1400px;
+        margin: 0px auto;
+        padding: 4px;
     }
 
     #content {
@@ -98,7 +114,7 @@ a:visited {
         /*display: block;*/
     }
 
-    #world-chat {
+    #world-chat.column-view {
         display: inline-block;
         width: 60%;
     }
@@ -107,28 +123,94 @@ a:visited {
         height: 40em;
     }
 
-    #world-area {
+    #world-area.column-view {
         float: right;
         width: calc(40% - 14px);
         height: 100%;
         margin-left: 4px;
     }
 
-    .viewbox {
+    #world-area.column-view .viewbox {
         margin-top: 0px;
     }
 
-    .viewbox + .viewbox {
+    #world-area.column-view .viewbox + .viewbox {
         margin-top: 4px;
+    }
+
+    .column-toggle {
+        display: block;
+        float: right;
     }
 }
 
+
+.form-item {
+    margin-bottom: 4px;
+}
 
 .form-item label {
     display: block;
 }
 
-.viewbox textarea {
+.form-item.inline {
+    display: flex;
     width: 100%;
+}
+
+.form-item.inline label {
+    display: inline-block;
+    width: 8em;
+}
+
+table {
+    width: auto;
+}
+
+table td {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+table td:last-child {
+    width: 100%;
+}
+
+
+.tinylabel {
+    font-size: 0.6em;
+}
+
+.small-icon {
+    display: inline-block;
+    height: 16px;
+    width: 16px;
+    background-image: url("/assets/img/icons.png");
+    background-position: -32px -64px;
+}
+
+img.image-preview {
+    width: auto;
+    height: auto;
+    border: 1px solid black;
+    vertical-align: middle;
+
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 128px !important;
+    max-height: 128px !important;
+
+}
+
+img.image-preview.big {
+    max-width: 256px !important;
+    max-height: 256px !important;
+}
+
+.slide-down {
+    overflow-y: hidden;
+
+    max-height: 500px;
+    transition: max-height 0.5s ease-in-out;
 }
 

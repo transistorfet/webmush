@@ -1,22 +1,10 @@
  
 
-* a MUSH for the modern age... a more visually/intuitively interactive system, easily used on mobile
-* A significant part would still be chat.  You would see a description of the room you're in, a list of people and objects, and a chat window of the current
-  content in the room.  You would see the exits in a visual format, with the option to click on them to travel.  Clicking on a person or object would allow you
-  to select an interaction
-
-* urls would signify where you are, and could be passed around for ... some reason
-* possibly audio playing live? (this could be abused of course)
-* music + background image for part of screen, to set the mood of the location
-* customizable css files, which could be stored on the server and downloaded only to the authorized user.  It shouldn't require protections because it's
-  all client side.
-
 * have a profile page which makes it easy to change things about you
 
-
-
-
 * make input autofocus
+* add logout
+
 
 * add way to delete an object with a command
 * add a check to make sure an object is dereferenced for deletion? or add a garbage collection phase, scheduled periodically
@@ -25,26 +13,46 @@
 * add an object clone command
 * maybe use es5 prototypes instead of es6 classes???
 
-* add a command to add attributes, and add functions... it would be for wizards only, and maybe would be a separate editor somewhere/somehow
-* allow partial and alternate command names?
+
+* add verb argument checking??
+* add a command to add attributes, functions to objects, and assign attributes that are not 'editable' (for wizards only)
+* add support for dot names in attributes, so that you can edit 'style.icon', etc
+
+* it shouldn't be possible to move if you're sitting down
+
+* add typing indicator, for chatting? make it easy to talk to someone who walks away
+* add means of talking to someone who's moving around
+
 
 * add command parser to root or something, so you can call verbs properly
 * add a back command so you can easily go back to where you were, or make it work with back buttons
 * there is an issue with /go #id, where the parser executes go on #id, when it should execute go on player.location.  Before I was having an
   issue with /hug player such that it was hugging the player first rather than hugging the ducky =/
 
+* there needs to be a way to cancel a prompt, send that back to the server, and have it cancel (close) all the prompts on other computers (for multiconnection)
+* form preview for old file remains, and select doesn't initially show the selected file
+* form data is not reset when a new prompt is presented
+            // TODO you have a serious problem here, where the verb editor is part of the user/builder object, but it's editing another object's data; and you need a way
+            //      to find the object during the response, so either the verb editor needs to be on all objects, and you activate it on the object which contains the verb,
+            //      or you need to pass the object id to the prompt and receive it back; via a hidden field in the form i guess
+args.player.prompt(this.id, 'delete', { label: "Are you sure you want to exchange your body?", type: 'yes/no' });
+args.player.prompt(this.id, 'delete', { label: "Are you sure you want to exchange your body?", submit: 'yes', cancel: 'no' });
+args.player.prompt(this.id, 'delete', { label: "Edit verb", fields: [ { type: 'textarea', name: 'function' }, { type: 'hidden', value: args.dobj.id } ] });
 
+* add item icons
+* add public flag to uploads
 * you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
-* add parameters.  Anything more than just a target select could enter the command on the command line for completion
-* add support for dot names in attributes, so that you can edit 'style.icon', etc
+
+* is there a way to simplify the error handling in verbs, by allowing an exception to occur and propogate to the verb calling function, which outputs the error?
 
 
 * what about fancy features, like images, background images, ui effects, colour animations
 * add notifications for activity in the current room, and maybe a way to filter only certain events
-* should it be possible to change the css rules for everything in the viewbox; so if you have a background that makes text hard to read, you can change that while
-  still using the class of the text to know what colour to choose
+* background audio, uploaded to the media thing, with the option to loop or not, and users have a mute button.
+* maybe sound effects?
 
 
+COMMANDS:
 * whisper
 * stand? sit? or should you do fully customizable poses?
 * follow/unfollow
@@ -52,7 +60,6 @@
 * add/remove aliases
 * move exits up/down
 * who
-
 
 
 RPG:
@@ -67,7 +74,33 @@ RPG:
 * store, where you list items for sale, and other users can view, buy, offer
 
 
+PROMPTS:
+* edit verb/function
+* customize room style
+* select/config theme
+* configure profile/preferences
+* reorder exits
+* configure character (in the body shop)
+* respond to yes/no questions, like 'reset body'
+
+
+IDEAS:
 
 * 'leash' the ducky, which makes it follow you, and also somehow makes it so that in descriptions, it shows you holding the leash... so it makes it
   clear to others (this is just an example for an effect that crosses beings)
+* a harp that you can 'play', which will play a pre-recorded song that you upload to the server
+
+
+
+
+    * a MUSH for the modern age... a more visually/intuitively interactive system, easily used on mobile
+    * A significant part would still be chat.  You would see a description of the room you're in, a list of people and objects, and a chat window of the current
+      content in the room.  You would see the exits in a visual format, with the option to click on them to travel.  Clicking on a person or object would allow you
+      to select an interaction
+
+    * urls would signify where you are, and could be passed around for ... some reason
+    * possibly audio playing live? (this could be abused of course)
+    * music + background image for part of screen, to set the mood of the location
+    * customizable css files, which could be stored on the server and downloaded only to the authorized user.  It shouldn't require protections because it's
+      all client side.
 

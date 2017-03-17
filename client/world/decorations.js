@@ -38,8 +38,19 @@ const Decorated = {
     },
 };
 
+const Styled = {
+    view: function (vnode) {
+        return [
+            //m('style', generateCSS("."+vnode.attrs.section+"-info", vnode.attrs.style)),
+            m('style', vnode.attrs.style),
+            vnode.children,
+        ];
+    },
+};
+
 module.exports = {
     parse: parseDecorations,
     Decorated,
+    Styled,
 };
 

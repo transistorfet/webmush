@@ -3,6 +3,7 @@
 
 const m = require('mithril');
 
+const UserInfo = require('./model');
 
 const Login = {
     username: '',
@@ -11,7 +12,6 @@ const Login = {
 
     onsubmit: function (e) {
         e.preventDefault();
-        var self = this;
 
         m.request({
             method: "POST",
@@ -22,11 +22,14 @@ const Login = {
             },
             //serialize: function(data) { return m.buildQueryString(data) },
         }).then(function (response) {
-            if (response.authenticated)
+            if (response.authenticated) {
+                console.log("PREFS", response.prefs);
+                UserInfo.prefs = response.prefs;
                 m.route.set('/world');
+            }
         }).catch(function (response) {
-            self.error = response.error;
-        });
+            this.error = response.error;
+        }.bind(this));
     },
 
     view: function (vnode) {
@@ -55,7 +58,6 @@ const SignUp = {
 
     onsubmit: function (e) {
         e.preventDefault();
-        var self = this;
         console.log(this.username, this.password, this.retype, this.email);
 
         if (this.password != this.retype) {
@@ -72,11 +74,13 @@ const SignUp = {
                 email: this.email,
             },
         }).then(function (response) {
-            if (response.authenticated)
+            if (response.authenticated) {
+                UserInfo.prefs = response.prefs;
                 m.route.set('/world');
+            }
         }).catch(function (response) {
-            self.error = response.error;
-        });
+            this.error = response.error;
+        }.bind(this));
     },
 
     view: function (vnode) {

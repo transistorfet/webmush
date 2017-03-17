@@ -2,11 +2,15 @@
 'use strict';
 
 const m = require('mithril');
-const websocket = require('./websocket');
+
+const websocket = require('../websocket');
+const UserInfo = require('../user/model');
+
 
 const World = {
     logs: [ ],
     view: { },
+    prompt: null,
     input: '',
     history: [ ],
     history_index: 0,
@@ -20,7 +24,11 @@ const World = {
             World.logs = JSON.parse(value);
     },
 
-    receive: function (ws, msg) {
+    open: function (event) {
+        websocket.send({ type: 'connect' });
+    },
+
+    receive: function (msg, ws) {
         World.connected = true;
         console.log("WS MSG IN", msg);
         if (msg.type == 'log') {
@@ -34,12 +42,23 @@ const World = {
             if (msg.details)
                 World.view.details = msg.details;
         }
+        else if (msg.type == 'prompt') {
+            // TODO you should check to see if the previous prompt can be dismissed or not
+            //World.prompt = msg.prompt;
+            World.prompt = new Prompt(msg.id, msg.respond, msg.form);
+        }
+        else if (msg.type == 'prompt-errors') {
+            World.prompt.errors = msg.errors;
+        }
+        else if (msg.type == 'prefs') {
+            UserInfo.prefs = msg.prefs;
+        }
         else
             return;
         m.redraw();
     },
 
-    close: function (msg) {
+    close: function (event) {
         if (World.connected) {
             World.log("<status>Disconnected");
             m.redraw();
@@ -124,12 +143,52 @@ const World = {
     editAttr: function (id, attr, value) {
         websocket.send({ type: 'edit', id: id, attr: attr, text: value });
     },
+
+    sendResponse: function (prompt, response) {
+        websocket.send({ type: 'respond', id: prompt.id, respond: prompt.respond, response: response });
+    },
 };
+
+class Prompt {
+    constructor(id, respond, form, onsubmit, oncancel) {
+        this.id = id;
+        this.respond = respond;
+        this.form = form;
+        this.response = { };
+        this.errors = null;
+        this.onsubmit = onsubmit;
+        this.oncancel = oncancel;
+    }
+
+    setItem(name, value) {
+        this.response[name] = value;
+    }
+
+    getForm(name) {
+        return this.subforms[name];
+    }
+
+    setForm(name, formdata) {
+        this.subforms[name] = formdata;
+    }
+
+    submit() {
+        if (this.onsubmit)
+            this.onsubmit(this.response);
+    }
+
+    cancel() {
+        if (this.oncancel)
+            this.oncancel();
+    }
+};
+
 
 window.addEventListener('popstate', World.back);
 
-websocket.use(World.receive);
-websocket.notifyClose(World.close);
+websocket.on('open', World.open);
+websocket.on('msg', World.receive);
+websocket.on('close', World.close);
 
 module.exports = World;
 

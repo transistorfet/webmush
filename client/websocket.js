@@ -5,8 +5,12 @@ const m = require('mithril');
 
 let ws = null;
 let errors = 0;
-let middleware = [ ];
-let closeCallback = null;
+let callbacks = {
+    'open': [ ],
+    'msg': [ ],
+    'close': [ ],
+    'error': [ ],
+};
 
 const connect = function ()
 {
@@ -21,23 +25,36 @@ const connect = function ()
         errors += 1;
     });
 
-    ws.addEventListener('open', function (msg) {
-        console.log("websocket connection open");
-        send({ type: 'connect' });
-    });
-
+    ws.addEventListener('open', onOpen);
     ws.addEventListener('close', onClose);
     ws.addEventListener('message', onMsg);
 }
 
-const onClose = function (msg) {
-    if (closeCallback)
-        closeCallback(msg);
-    console.log("websocket connection closed", msg);
+const disconnect = function ()
+{
+    if (ws)
+        ws.close();
     ws = null;
-    if (msg.code == 4001)
+};
+
+const onOpen = function (event) {
+    console.log("websocket connection open");
+
+    callbacks['open'].map(function (func) {
+        func(event, ws);
+    });
+};
+
+const onClose = function (event) {
+    callbacks['close'].map(function (func) {
+        func(event, ws);
+    });
+
+    console.log("websocket connection closed", event);
+    ws = null;
+    if (event.code == 4001)
         m.route.set('/login');
-    else if (msg.code == 1001)
+    else if (event.code == 1001)
         return;
     else {
         errors += 1;
@@ -52,10 +69,10 @@ const onClose = function (msg) {
     }
 };
 
-const onMsg = function (msg) {
-    let response = JSON.parse(msg.data);
-    middleware.map(function (func) {
-        func(ws, response);
+const onMsg = function (event) {
+    let msg = JSON.parse(event.data);
+    callbacks['msg'].map(function (func) {
+        func(msg, ws);
     });
 };
 
@@ -63,18 +80,19 @@ const send = function (msg) {
     ws.send(JSON.stringify(msg));
 }
 
-const use = function (func) {
-    middleware.push(func);
+const on = function (signal, func) {
+    if (signal in callbacks)
+        callbacks[signal].push(func);
 };
 
-const notifyClose = function (func) {
-    closeCallback = func;
-};
+const isConnected = function () {
+    return ws ? true : false;
+}
 
 module.exports = {
     connect,
     send,
-    use,
-    notifyClose,
+    on,
+    isConnected,
 };
  

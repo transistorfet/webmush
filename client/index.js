@@ -3,10 +3,11 @@
  
 const m = require('mithril');
 
-const Page = require('./components/layout');
-const Users = require('./components/users');
-const Welcome = require('./components/welcome');
-const WorldArea = require('./components/world');
+const Page = require('./layout');
+const User = require('./user/components');
+const Media = require('./media/components');
+const World = require('./world/components');
+const Welcome = require('./welcome');
 
 
 document.addEventListener('DOMContentLoaded', function ()
@@ -15,9 +16,10 @@ document.addEventListener('DOMContentLoaded', function ()
 
     m.route(document.getElementById('main'), '/', {
         '/': Page(Welcome),
-        '/world': Page(WorldArea),
-        '/login': Page(Users.Login),
-        '/signup': Page(Users.SignUp),
+        '/login': Page(User.Login),
+        '/signup': Page(User.SignUp),
+        '/world': Page(World, true),
+        '/manage': Page(Media.Manager, true),
     });
 });
 
