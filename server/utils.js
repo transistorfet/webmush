@@ -30,7 +30,6 @@ const parseCommand = function(player, verb, text) {
 
 const parseObjects = function (args, text) {
     let m = text.match(parse);
-    console.log(m);
     if (!m) {
         args.dobjstr = text;
         args.dobj = args.player.find_object(text);
@@ -74,6 +73,7 @@ const prepositions = [
     "as",
     "off",
     "off of",
+    "of",
 ];
 
 let parse = new RegExp('^\\s*(.*?)\\s+(' + prepositions.join('|') + ')\\s+(.*?)\\s*$', 'i');

@@ -3,8 +3,9 @@
 
 const m = require('mithril');
 
+const View = require('../views');
+const Forms = require('../forms');
 const World = require('./model');
-const View = require('./views');
 const Decorations = require('./decorations');
 
 
@@ -18,7 +19,7 @@ const WorldArea = {
         return [
             m('div', { id: "world-chat", class: this.columns ? 'column-view' : '' }, [
                 m('div', { id: "world-logs" }, 
-                    m(WorldLogs, { logs: World.logs })),
+                    m(WorldLogs, { logs: World.console.logs })),
                 m('div', { id: "world-input-div" },
                     m(WorldInput)),
             ]),
@@ -47,17 +48,17 @@ const WorldLogs = {
 const WorldInput = {
     checkEnter: function (e) {
         if (e.key == 'Enter')
-            World.processInput();
+            World.console.onInput();
         else if (e.key == 'ArrowUp')
-            World.historyUp();
+            World.console.historyUp();
         else if (e.key == 'ArrowDown')
-            World.historyDown();
+            World.console.historyDown();
     },
 
     view: function (vnode) {
         return [
-            m('input', { id: "world-input", type: "text", oninput: m.withAttr('value', World.setInput), onkeydown: this.checkEnter, value: World.input }),
-            m('button', { type: "button", onclick: World.processInput }, "Say"),
+            m('input', { id: "world-input", type: "text", oninput: m.withAttr('value', World.console.setInput), onkeydown: this.checkEnter, value: World.console.input }),
+            m('button', { type: "button", onclick: World.console.onInput }, "Say"),
         ];
     },
 };
@@ -66,7 +67,7 @@ const WorldView = {
     view: function (vnode) {
         return [
             m(WorldViewLocation, { location: vnode.attrs.view.location }),
-            vnode.attrs.prompt ? m(WorldViewPrompt, { prompt: vnode.attrs.prompt }) : '',
+            vnode.attrs.prompt ? m(View.Box, { class: 'prompt-info slide-down' }, vnode.attrs.prompt.render()) : '',
             vnode.attrs.view.details ? m(WorldViewDetails, { details: vnode.attrs.view.details }) : '',
             m(WorldViewPlayer, { player: vnode.attrs.view.player }),
         ];
@@ -82,8 +83,8 @@ const WorldViewLocation = {
         return m(Decorations.Styled, { style: style }, [
             m(View.Box, { class: 'location' + ( style ? ' styled' : '' ) }, [
                 m('span', { class: 'tinylabel' }, "You are in"),
-                m(View.Field, { class: 'title', obj: vnode.attrs.location, attr: 'title' }),
-                m(View.Field, { class: 'description', obj: vnode.attrs.location, attr: 'description' }),
+                m(ObjectAttribute, { class: 'title', obj: vnode.attrs.location, attr: 'title' }),
+                m(ObjectAttribute, { class: 'description', obj: vnode.attrs.location, attr: 'description' }),
                 m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.location })),
                 vnode.attrs.location.audio ? m('audio', { src: vnode.attrs.location.audio, controls: true, autoplay: true, style: 'float: right; width: 120px;' }) : '',
                 m('span', { class: 'tinylabel' }, "Exits"),
@@ -109,8 +110,8 @@ const WorldViewPlayer = {
         return (
             m(View.Box, { class: 'player' }, [
                 m('span', { class: 'tinylabel' }, "You are"),
-                m(View.Field, { class: 'title', obj: vnode.attrs.player, attr: 'title' }),
-                m(View.Field, { class: 'description', obj: vnode.attrs.player, attr: 'description' }),
+                m(ObjectAttribute, { class: 'title', obj: vnode.attrs.player, attr: 'title' }),
+                m(ObjectAttribute, { class: 'description', obj: vnode.attrs.player, attr: 'description' }),
                 m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.player })),
                 m('span', { class: 'tinylabel' }, "You are carrying"),
                 m(WorldViewContents, { contents: vnode.attrs.player.contents }),
@@ -126,8 +127,8 @@ const WorldViewDetails = {
 
         return m(View.Box, { class: 'details' }, [
             m('span', { class: 'tinylabel', onclick: () => { World.view.details = null; } }, "You are looking at"),
-            m(View.Field, { class: 'title', obj: vnode.attrs.details, attr: 'title' }),
-            m(View.Field, { class: 'description', obj: vnode.attrs.details, attr: 'description' }),
+            m(ObjectAttribute, { class: 'title', obj: vnode.attrs.details, attr: 'title' }),
+            m(ObjectAttribute, { class: 'description', obj: vnode.attrs.details, attr: 'description' }),
         ]);
     },
 };
@@ -163,24 +164,12 @@ const WorldVerbList = {
     },
 };
 
-const WorldViewPrompt = {
-    submit: function (prompt) {
-        World.sendResponse(prompt, prompt.response);
-        World.prompt = null;
-    },
-
-    cancel: function () {
-        World.prompt = null;
-    },
-
+const ObjectAttribute = {
     view: function (vnode) {
-        return m(View.Box, { class: 'prompt-info slide-down' }, [
-            vnode.attrs.prompt.errors ? m('div', { class: 'error' }, vnode.attrs.prompt.errors.map((err) => { return m('span', err); })) : '',
-            m('span', { class: 'tinylabel' }, vnode.attrs.prompt.form.label),
-            m(View.Form, { fields: vnode.attrs.prompt.form.fields, value: vnode.attrs.prompt.response }),
-            m('button', { class: 'tinylabel', onclick: this.submit.bind(this, vnode.attrs.prompt) }, vnode.attrs.prompt.form.submit ? vnode.attrs.prompt.form.submit : 'Submit'), " ",
-            m('button', { class: 'tinylabel', onclick: this.cancel.bind(this) }, vnode.attrs.prompt.form.cancel ? vnode.attrs.prompt.form.cancel : 'Cancel'),
-        ]);
+        if (vnode.attrs.obj.editable.find((attr) => { return attr.split('|')[0] == vnode.attrs.attr; }))
+            return m(View.EditableField, Object.assign({ ondone: (value) => { World.editAttr(vnode.attrs.obj, vnode.attrs.attr, value); } }, vnode.attrs), vnode.attrs.obj[vnode.attrs.attr]);
+        else
+            return m('div', vnode.attrs, vnode.attrs.obj[vnode.attrs.attr]);
     },
 };
 

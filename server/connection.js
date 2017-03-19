@@ -1,8 +1,9 @@
 
 'use strict';
 
-let World = require('./world');
-let Utils = require('./utils');
+const Error = require('./error');
+const Utils = require('./utils');
+const World = require('./world');
 
 class Connection {
     constructor(ws) {
@@ -78,7 +79,13 @@ const onConnect = function (ws, req, next)
 
 const onMsg = function (ws, msg)
 {
-    let args = { player: ws.player, text: msg.text };
+    let args = { player: ws.player, text: msg.text ? msg.text : '' };
+    if (msg.id) {
+        if (!(msg.id >= 0 && msg.id < World.Objects.length))
+            return args.player.tell("I don't see an object here with id #"+msg.id);
+        args.dobj = World.Objects[msg.id];
+    }
+
 
     if (msg.type == 'connect') {
         ws.player.update_view();
@@ -89,68 +96,53 @@ const onMsg = function (ws, msg)
     else if (msg.type == 'emote') {
         ws.player.location.emote(args);
     }
-    else if (msg.type == 'go') {
-        if (msg.id && msg.id >= 0 && msg.id < World.Objects.length)
-            args.dobj = World.Objects[msg.id];
-        ws.player.location.go(args);
-    }
     else if (msg.type == 'do') {
-        args.verb = msg.verb = msg.verb.toLowerCase();
-
-        if (msg.id) {
-            if (msg.id >= 0 && msg.id < World.Objects.length)
-                args.dobj = World.Objects[msg.id];
-            else
-                return args.player.tell("Invalid object provided for verb");
-        }
-        else if (msg.text)
-            Utils.parseObjects(args, msg.text);
-
-        /*
-        if (args.dobj && args.dobj.can_do(args.player, msg.verb))
-            args.dobj[msg.verb].apply(args.dobj, [args]);
-        else if (args.player.can_do(args.player, msg.verb))
-            args.player[msg.verb].apply(args.player, [args]);
-        else if (args.player.location.can_do(args.player, msg.verb))
-            args.player.location[msg.verb].apply(args.player.location, [args]);
-        else
-            args.player.tell("I don't understand that.");
-        */
-
-        if (!args.dobj || !args.dobj.do_verb_for(args.player, msg.verb, args))
-            if (!args.player.do_verb_for(args.player, msg.verb, args))
-                if (!args.player.location.do_verb_for(args.player, msg.verb, args))
-                    if (!args.iobj || !args.iobj.do_verb_for(args.player, msg.verb, args))
-                        args.player.tell("I don't understand that.");
-    }
-    else if (msg.type == 'edit') {
-        if (!msg.id || msg.id < 0 || msg.id >= World.Objects.length)
-            return args.player.tell("Invalid object provided for attribute edit");
-        let item = World.Objects[msg.id];
+        args.verb = msg.verb.toLowerCase();
 
         try {
-            item.edit_by(args.player, msg.attr, msg.text);
+            if (msg.id) {
+                if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
+                    args.player.tell("I don't understand that.");
+            }
+            else {
+                if (msg.text)
+                    Utils.parseObjects(args, msg.text);
+
+                if (!args.player.do_verb_for(args.player, args.verb, args))
+                    if (!args.player.location.do_verb_for(args.player, args.verb, args))
+                        if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
+                            if (!args.iobj || !args.iobj.do_verb_for(args.player, args.verb, args))
+                                args.player.tell("I don't understand that.");
+            }
+        }
+        catch (e) {
+            catchError(e, args.player);
+        }
+    }
+    else if (msg.type == 'edit') {
+        if (!msg.id) return;
+
+        try {
+            args.dobj.edit_by(args.player, msg.attr, msg.text);
             args.player.update_view();
         }
         catch (e) {
-            args.player.tell(e);
+            catchError(e, args.player);
         }
     }
     else if (msg.type == 'respond') {
-        if (!msg.id || msg.id < 0 || msg.id >= World.Objects.length)
-            return args.player.tell("Invalid object provided for prompt response");
-        let item = World.Objects[msg.id];
-
+        if (!msg.id) return;
+        if (msg.cancel)
+            args.player.tell_msg({ type: 'prompt-update', close: true });
         args.response = msg.response;
+
         try {
-            if (!item.do_verb_for(args.player, msg.respond, args))
+            if (!args.dobj.do_verb_for(args.player, msg.respond, args))
                 return args.player.tell("You can't respond to that");
+            args.player.tell_msg({ type: 'prompt-update', close: true });
         }
         catch (e) {
-            if (typeof e == 'string' || Array.isArray(e))
-                args.player.send_msg({ type: 'prompt-update', errors: typeof e == 'string' ? [ e ] : e });
-            else
-                console.log(e.stack);
+            catchError(e, args.player);
         }
     }
     else if (msg.type == 'get') {
@@ -165,6 +157,15 @@ const onMsg = function (ws, msg)
     }
 
     return;
+};
+
+const catchError = function (e, player) {
+    if (typeof e == 'string')
+        player.tell(e);
+    else if (e instanceof Error.Validation)
+        player.tell_msg({ type: 'prompt-update', errors: e.messages });
+    else
+        throw e;
 };
 
 module.exports = onConnect;

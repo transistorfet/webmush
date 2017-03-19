@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 
+const Error = require('./error');
 const Utils = require('./utils');
 const Style = require('../lib/style');
 
@@ -39,6 +40,7 @@ class Root {
         // TODO check to make sure there are no references?
         Objects[this.id] = null;
         fs.unlinkSync('data/objects/'+this.id+'.json');
+        // TODO also delete media, or at least put it in an attic so that if the id is recycled, the new user can't access old content
         this.id = -1;
         this.recycled = true;
     }
@@ -158,21 +160,38 @@ class Root {
         let signature = this.verbs_for(player, true).find((v) => { return v.split('|').shift().split('/').indexOf(verb) != -1; });
         if (!signature)
             return false;
-        //let m = signature.match(/^(.+?)(?:\/.*?)?(?:\|(.+?)(?: (.*?) (.*))?)?$/);
-        //console.log("DO", signature, m);
 
         let parts = signature.split('|');
         let funcname = parts[0].split('/', 1)[0];
-        // TODO do type checking
-        if (parts[1] && parts[1] == 'prompt') {
-            if (!args.response) {
-                args.player.prompt(this.id, funcname, this.get_form_for(funcname, args.player));
+
+        if (parts[1]) {
+            if (parts[1] == 'prompt' && !this.check_form(args, funcname))
                 return true;
-            }
-            else
-                this.validate_form_for(funcname, args.player, args.response);
+            else if (!this.check_args(args, parts[1]))
+                return false;
         }
         this[funcname].apply(this, [args]);
+        return true;
+    }
+
+    check_args(args, signature) {
+        let types = signature.match(/^(?:(.+?)(?:\s+(.+)\s+(.+?))?)?$/);
+        if (!types[1] && args.text || types[1] && ((types[1] == 'string' && !args.dobjstr) || (types[1] == 'object' && !args.dobj) || (types[1] == 'this' && args.dobj != this)))
+            return false
+        if (!types[2] && args.prep || types[2] && (!args.prep || !args.prep.match(new RegExp('^'+types[2].replace(/\//g, '|')+'$', 'i'))))
+            return false;
+        if (!types[3] && args.iobj || types[3] && ((types[3] == 'string' && !args.iobjstr) || (types[3] == 'object' && !args.iobj) || (types[3] == 'this' && args.iobj != this)))
+            return false;
+        return true;
+    }
+
+    check_form(args, name) {
+        if (!args.response) {
+            args.player.prompt(this.id, name, this.get_form_for(args.player, name));
+            return false;
+        }
+        else
+            this.validate_form_for(args.player, name, args.response);
         return true;
     }
 
@@ -200,16 +219,18 @@ class Root {
         return true;
     }
 
-    get_form_for(name, player) {
+    get_form_for(player, name) {
         return null;
     }
 
-    validate_form_for(name, player, response) {
+    validate_form_for(player, name, response) {
         let errors = [ ];
-        let form = this.get_form_for(name, player);
+        let form = this.get_form_for(player, name);
 
         for (let i in form.form) {
             let value = response[form.form[i].name];
+            if (form.form[i].required && !value)
+                errors.push(form.form[i].name + " is required.");
             if (form.form[i].type == 'text') {
                 if (typeof value != 'string')
                     errors.push(form.form[i].name + " must be a string.");
@@ -221,7 +242,7 @@ class Root {
         }
 
         if (errors.length > 0)
-            throw errors;
+            throw new Error.Validation(errors);
     }
 }
 
@@ -274,7 +295,7 @@ class Being extends Thing {
 
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
-        verbs.push('hug');
+        verbs.push('hug|this');
         return verbs;
     }
 
@@ -393,7 +414,7 @@ class Player extends Being {
             verbs.push('profile|prompt', 'theme|prompt');
         }
         if (all && player.isWizard)
-            verbs.push('teleport', 'examine', 'edit', 'verb');
+            verbs.push('teleport', 'examine|object', 'setattr', 'editverb');
         return verbs;
     }
 
@@ -443,25 +464,19 @@ class Player extends Being {
     }
 
     examine(args) {
-        if (!args.dobj)
-            args.player.tell("I don't see that here.");
-        else {
-            args.player.tell(this.format("{constructor.name}; {name} (#{id}): {title}", args.dobj));
-            if (args.dobj.location)
-                args.player.tell(this.format("Its location is {location.name} (#{location.id})", args.dobj));
-            if (args.dobj.exits)
-                args.dobj.exits.forEach(function (exit) {
-                    args.player.tell(this.format("<indent>{name} (#{id}) to {title} (#{dest.id})", exit));
-                }.bind(this));
-        }
+        args.player.tell(this.format("{constructor.name}; {name} (#{id}): {title}", args.dobj));
+        if (args.dobj.location)
+            args.player.tell(this.format("Its location is {location.name} (#{location.id})", args.dobj));
+        if (args.dobj.exits)
+            args.dobj.exits.forEach(function (exit) {
+                args.player.tell(this.format("<indent>{name} (#{id}) to {title} (#{dest.id})", exit));
+            }.bind(this));
     }
 
-    edit(args) {
+    setattr(args) {
         let words = args.text.match(/^\s*(\S+?)\s+(\S+?)\s+(.*)$/);
-        if (!words) {
-            args.player.tell("Usage: /edit <object> <attribute> <value>");
-            return;
-        }
+        if (!words)
+            return args.player.tell("Usage: /setattr <object> <attribute> <value>");
 
         let value;
         try {
@@ -474,77 +489,56 @@ class Player extends Being {
         let item = args.player.find_object(words[1]);
         if (!item)
             args.player.tell("I don't see that object here.");
-
-        try {
-            item.edit_by(args.player, words[2], value);
-            args.player.update_view();
-        }
-        catch (e) {
-            args.player.tell(e);
-        }
+        item.edit_by(args.player, words[2], value);
+        args.player.update_view();
     }
 
-    verb(args) {
-        if (!args.reponse) {
-            if (!args.iobj || !args.dobjstr || !args.prep)
-                args.player.tell("Usage: /verb <attribute> for <object>");
+    editverb(args) {
+        if (!args.response) {
+            if (!this.check_args(args, 'string for/on/of object'))
+                args.player.tell("Usage: /editverb <attribute> for <object>");
             else
-                args.player.prompt(this.id, 'verb', { label: "Editing " + args.dobjstr + " for #" + args.iobj.id, fields: [ { name: 'function', type: 'textarea', value: args.iobj[args.dobjstr].toString() } ] });
-            // TODO you have a serious problem here, where the verb editor is part of the user/builder object, but it's editing another object's data; and you need a way
-            //      to find the object during the response, so either the verb editor needs to be on all objects, and you activate it on the object which contains the verb,
-            //      or you need to pass the object id to the prompt and receive it back; via a hidden field in the form i guess
+                args.player.prompt(this.id, 'verb', {
+                    label: "Editing " + args.dobjstr + " for #" + args.iobj.id,
+                    fields: [
+                        { name: 'id', type: 'hidden', value: args.iobj.id },
+                        { name: 'verb', type: 'hidden', value: args.dobjstr },
+                        { name: 'function', type: 'code', value: args.iobj[args.dobjstr] ? args.iobj[args.dobjstr].toString() : 'function (args) {\n}' },
+                    ]
+                });
         }
         else {
             console.log(args.response);
+            if (!args.response.verb || !args.response.id || args.response.id < 0 || args.response.id >= Objects.length)
+                args.player.tell("That doesn't appear to be a valid object you're saving the verb to");
+            else
+                Objects[args.response.id][args.response.verb] = eval("(" + args.response.function + ")");
         }
     }
 
     profile(args) {
-        console.log("PROF", args.response);
-        if (!args.response)
-            args.player.prompt(this.id, 'profile', this.get_form_for('profile', args.player));
-        else {
-            console.log(args.response);
-            try {
-                this.validate_form_for('profile', args.player, args.response);
-            }
-            catch (e) {
-                console.log("FAILED", e);
-                //args.player.tell_msg({});
-            }
-            this.style = args.response;
-            this.update_contents();
-        }
+        console.log("PROFILE", args.response);
+        if (args.response.aliases)
+            this.aliases = args.response.aliases.split(/\s*,\s*/);
+        // TODO set profile picture
+        this.update_contents();
     }
 
     theme(args) {
-        if (!args.response)
-            args.player.prompt(this.id, 'theme', this.get_form_for('theme', args.player));
-        else {
-            console.log(args.response);
-            try {
-                this.validate_form_for('theme', args.player, args.response);
-            }
-            catch (e) {
-                console.log("FAILED", e);
-                //args.player.tell_msg({});
-            }
-            if (args.response.theme_switch == 'cssfile')
-                this._theme = args.response.theme.cssfile;
-            else
-                this._theme = args.response.theme;
-            //this.update_contents();
-            // TODO send update prefs message
-            args.player.tell_msg({ type: 'prefs', prefs: args.player.get_prefs() });
-        }
+        console.log("THEME", args.response);
+        if (args.response.theme_switch == 'cssfile')
+            this._theme = args.response.theme.cssfile;
+        else
+            this._theme = args.response.theme;
+        args.player.tell_msg({ type: 'prefs', prefs: args.player.get_prefs() });
     }
 
-    get_form_for(name, player) {
+    get_form_for(player, name) {
         switch (name) {
             case 'profile':
                 return { label: "Your Profile", fields: [
                     { name: 'picture', label: 'Avatar', type: 'file', filter: '^image', value: this.profile.picture ? this.profile.picture : '' },
-                    { name: 'aliases', label: 'Aliases', type: 'text', value: this.aliases ? this.aliases : '' },
+                    { name: 'aliases', label: 'Aliases', type: 'text', value: this.aliases ? this.aliases.join(', ') : '' },
                 ] };
             case 'theme':
                 return { label: "Editing Site Theme", fields: [
@@ -562,7 +556,7 @@ class Player extends Being {
                     ] },
                 ] };
             default:
-                return super.get_form_for(name, player);
+                return super.get_form_for(player, name);
         }
     }
 }
@@ -729,10 +723,8 @@ class Room extends Thing {
     }
 
     addexit(args) {
-        if (!args.iobj || !args.dobjstr || !args.prep || args.prep != 'to') {
-            args.player.tell("Usage: /addexit <direction> to <room>");
-            return;
-        }
+        if (!this.check_args(args, 'string to object'))
+            return args.player.tell("Usage: /addexit <direction> to <room>");
 
         if (!(args.iobj instanceof Room))
             args.player.tell("That isn't a room");
@@ -759,23 +751,13 @@ class Room extends Thing {
     }
 
     customize(args) {
-        if (!args.response)
-            args.player.prompt(this.id, 'customize', this.get_form_for('customize', args.player));
-        else {
-            console.log(args.response);
-            try {
-                this.validate_form_for('customize', args.player, args.response);
-            }
-            catch (e) {
-                console.log("FAILED", e);
-                //args.player.tell_msg({});
-            }
-            this.style = args.response;
-            this.update_contents();
-        }
+        if (!this.check_form(args, 'customize'))
+            return;
+        this.style = args.response;
+        this.update_contents();
     }
 
-    get_form_for(name, player) {
+    get_form_for(player, name) {
         switch (name) {
             case 'customize':
                 return { label: "Customize style for \"" + this.title + "\"", fields: [
@@ -786,7 +768,7 @@ class Room extends Thing {
                     { name: 'description', label: 'Description CSS', type: 'text', value: this.style ? this.style.description : '' },
                 ] };
             default:
-                return super.get_form_for(name, player);
+                return super.get_form_for(player, name);
         }
     }
 }
@@ -875,9 +857,9 @@ class Item extends Thing {
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
         if (this.location == player || all)
-            verbs.push('drop', 'give|t');
+            verbs.push('drop', 'give|this to object');
         if (this.location == player.location || all)
-            verbs.push('pickup/take');
+            verbs.push('pickup/take/get');
         return verbs;
     }
 

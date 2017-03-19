@@ -3,6 +3,7 @@
 
 const m = require('mithril');
 
+const View = require('../views');
 const FileInfo = require('./model');
 
 
@@ -101,7 +102,7 @@ const Manager = {
             m('span', files.length + " files, " + (files.reduce((acc, item) => { return acc + item.size; }, 0) / Math.pow(2, 20)).toFixed(2) + " MiB" + " / " + (FileInfo.quota / Math.pow(2, 20)).toFixed(2) + " MiB"),
             m('table',  files.map(function (item) {
                 return m('tr', [
-                    m('td', m(Rename, { ondone: FileInfo.rename.bind(FileInfo, item.path), value: item.name })),
+                    m('td', m(View.EditableText, { ondone: FileInfo.rename.bind(FileInfo, item.path), value: item.name })),
                     item.mimetype.match(/^image/) ? m('td', m('img', { class: 'image-preview big', src: item.path })) : m('td'),
                     m('td', item.editable ? m('button', { onclick: FileInfo.delete.bind(FileInfo, item.path) }, 'Delete') : ''),
                 ]);
@@ -112,25 +113,6 @@ const Manager = {
     },
 };
 
-const Rename = {
-    rename: '',
-
-    onupdate: function (vnode) {
-        vnode.dom.focus();
-    },
-
-    view: function (vnode) {
-        if (this.rename)
-            return m('input', {
-                type: 'text',
-                oninput: m.withAttr('value', (value) => { this.rename = value; }, this),
-                onblur: m.withAttr('value', (value) => { if (this.rename != vnode.attrs.value) vnode.attrs.ondone(value); this.rename = ''; }, this),
-                value: this.rename,
-            });
-        else
-            return m('span', { onclick: (() => { this.rename = vnode.attrs.value; }).bind(this) }, vnode.attrs.value);
-    },
-};
 
 
 module.exports = {

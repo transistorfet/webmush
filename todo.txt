@@ -1,9 +1,8 @@
  
 
-* have a profile page which makes it easy to change things about you
-
 * make input autofocus
 * add logout
+* make help take an arg which can tell you the verbs on an object that wouldn't otherwise be included in normal help
 
 
 * add way to delete an object with a command
@@ -14,36 +13,29 @@
 * maybe use es5 prototypes instead of es6 classes???
 
 
-* add verb argument checking??
 * add a command to add attributes, functions to objects, and assign attributes that are not 'editable' (for wizards only)
 * add support for dot names in attributes, so that you can edit 'style.icon', etc
+* add a back command so you can easily go back to where you were, or make it work with back buttons
 
-* it shouldn't be possible to move if you're sitting down
+* make check_form/validate_form take an optional form as an argument (otherwise takes a form name, which is found from get_form)
+* move form stuff from client and server into library, so you can have it in one place, and it can be in separate files so it doesn't all have to be loaded,
+  but validation could be on either end
+* form preview for old file remains, and select doesn't initially show the selected file
+* user theme doesn't currently work; you actually don't need form switcher because the css file can be specified as a default
+* form switcher doesn't work properly, especially with closing/reopening a prompt, it wont reset data
+* add a way to add data to a form without using a hidden field; just an attribute on the prompt object
+
+* refactor logs/history out of world model into it's own object/class/thing
 
 * add typing indicator, for chatting? make it easy to talk to someone who walks away
 * add means of talking to someone who's moving around
+* it shouldn't be possible to move if you're sitting down
 
-
-* add command parser to root or something, so you can call verbs properly
-* add a back command so you can easily go back to where you were, or make it work with back buttons
-* there is an issue with /go #id, where the parser executes go on #id, when it should execute go on player.location.  Before I was having an
-  issue with /hug player such that it was hugging the player first rather than hugging the ducky =/
-
-* there needs to be a way to cancel a prompt, send that back to the server, and have it cancel (close) all the prompts on other computers (for multiconnection)
-* form preview for old file remains, and select doesn't initially show the selected file
-* form data is not reset when a new prompt is presented
-            // TODO you have a serious problem here, where the verb editor is part of the user/builder object, but it's editing another object's data; and you need a way
-            //      to find the object during the response, so either the verb editor needs to be on all objects, and you activate it on the object which contains the verb,
-            //      or you need to pass the object id to the prompt and receive it back; via a hidden field in the form i guess
-args.player.prompt(this.id, 'delete', { label: "Are you sure you want to exchange your body?", type: 'yes/no' });
-args.player.prompt(this.id, 'delete', { label: "Are you sure you want to exchange your body?", submit: 'yes', cancel: 'no' });
-args.player.prompt(this.id, 'delete', { label: "Edit verb", fields: [ { type: 'textarea', name: 'function' }, { type: 'hidden', value: args.dobj.id } ] });
 
 * add item icons
 * add public flag to uploads
 * you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
 
-* is there a way to simplify the error handling in verbs, by allowing an exception to occur and propogate to the verb calling function, which outputs the error?
 
 
 * what about fancy features, like images, background images, ui effects, colour animations
@@ -81,7 +73,6 @@ PROMPTS:
 * configure profile/preferences
 * reorder exits
 * configure character (in the body shop)
-* respond to yes/no questions, like 'reset body'
 
 
 IDEAS:
