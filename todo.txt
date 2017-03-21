@@ -5,12 +5,14 @@
 * make help take an arg which can tell you the verbs on an object that wouldn't otherwise be included in normal help
 
 
+* keep rolling backup of object dbs
+* add garbage collection to the save process
 * add way to delete an object with a command
-* add a check to make sure an object is dereferenced for deletion? or add a garbage collection phase, scheduled periodically
 * reuse object ids when allocating new objects
-* fix the hack during load where we assume the last object is the newest object; instead allow a constructor argument to set the id (maybe only if id is not used)
 * add an object clone command
 * maybe use es5 prototypes instead of es6 classes???
+
+* further refactor console code? do you want to mix models and components?
 
 
 * add a command to add attributes, functions to objects, and assign attributes that are not 'editable' (for wizards only)
@@ -18,18 +20,17 @@
 * add a back command so you can easily go back to where you were, or make it work with back buttons
 
 * make check_form/validate_form take an optional form as an argument (otherwise takes a form name, which is found from get_form)
-* move form stuff from client and server into library, so you can have it in one place, and it can be in separate files so it doesn't all have to be loaded,
-  but validation could be on either end
+* add a way to add data to a form without using a hidden field; just an attribute on the prompt object
 * form preview for old file remains, and select doesn't initially show the selected file
 * user theme doesn't currently work; you actually don't need form switcher because the css file can be specified as a default
 * form switcher doesn't work properly, especially with closing/reopening a prompt, it wont reset data
-* add a way to add data to a form without using a hidden field; just an attribute on the prompt object
+* should you move form stuff to lib/, along with server side validation?
 
-* refactor logs/history out of world model into it's own object/class/thing
 
 * add typing indicator, for chatting? make it easy to talk to someone who walks away
 * add means of talking to someone who's moving around
 * it shouldn't be possible to move if you're sitting down
+* finish implementing follow... how to move the character
 
 
 * add item icons
@@ -64,6 +65,8 @@ RPG:
 * spells/cast
 * learn/train/etc
 * store, where you list items for sale, and other users can view, buy, offer
+
+* a map item that can take you back to where you've been, or could be found... maybe it would only guide you rather than quicklink you (ie. cause the right exits to be highlighted)
 
 
 PROMPTS:

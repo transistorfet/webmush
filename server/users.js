@@ -28,10 +28,11 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(id, done) {
-    if (!id || id < 0 || id >= World.Objects.length || !(World.Objects[id] instanceof World.Player))
+    let player = World.DB.get_object(id, World.Player);
+    if (!player)
         done(null, { id: -1 });
     else
-        done(null, { id: id, player: World.Objects[id] });
+        done(null, { id: id, player: player });
 });
 
 const authenticate = function (req, res, next) {

@@ -37,7 +37,7 @@ const EditableField = {
                 onkeydown: (e) => { if (e.key == 'Escape') this.value = false; },
             }, vnode.attrs), this.value);
         else
-            return m('div', Object.assign(vnode.attrs.disable ? { onclick: () => { this.value = vnode.children; } } : { }, vnode.attrs), vnode.children);
+            return m('div', Object.assign(!vnode.attrs.disable ? { onclick: () => { this.value = vnode.children; } } : { }, vnode.attrs), vnode.children);
     },
 };
 

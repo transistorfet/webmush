@@ -5,8 +5,11 @@ const m = require('mithril');
 
 const Media = require('./media/components');
 
+let _seq = 0;
+
 class Prompt {
     constructor(id, respond, form, onsubmit, oncancel) {
+        this.seq = _seq++;
         this.id = id;
         this.respond = respond;
         this.form = form;
@@ -47,8 +50,6 @@ class Prompt {
 
 const Form = {
     view: function (vnode) {
-        vnode.attrs.prompt.setItem('poop', 'thing');
-        
         return [
             vnode.attrs.prompt.errors ? m('div', { class: 'error' }, vnode.attrs.prompt.errors.map((err) => { return m('span', err); })) : '',
             m('span', { class: 'tinylabel' }, vnode.attrs.prompt.form.label),

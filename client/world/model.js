@@ -41,10 +41,12 @@ const World = {
             World.prompt = new Forms.Prompt(msg.id, msg.respond, msg.form, World.sendResponse, World.sendCancel);
         }
         else if (msg.type == 'prompt-update') {
-            if (World.prompt && msg.errors)
-                World.prompt.errors = msg.errors;
-            else if (msg.close)
-                World.prompt = null;
+            if (World.prompt && World.prompt.seq == msg.seq) {
+                if (msg.errors)
+                    World.prompt.errors = msg.errors;
+                else if (msg.close)
+                    World.prompt = null;
+            }
         }
         else if (msg.type == 'prefs') {
             UserInfo.prefs = msg.prefs;
@@ -103,11 +105,11 @@ const World = {
     },
 
     sendResponse: function (prompt, response) {
-        websocket.send({ type: 'respond', id: prompt.id, respond: prompt.respond, response: response });
+        websocket.send({ type: 'respond', id: prompt.id, respond: prompt.respond, response: response, seq: prompt.seq });
     },
 
     sendCancel: function (prompt) {
-        websocket.send({ type: 'respond', id: prompt.id, respond: prompt.respond, cancel: true });
+        websocket.send({ type: 'respond', id: prompt.id, respond: prompt.respond, cancel: true, seq: prompt.seq });
     },
 };
 

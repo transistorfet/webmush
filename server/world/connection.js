@@ -3,7 +3,7 @@
 
 const Error = require('./error');
 const Utils = require('./utils');
-const World = require('./world');
+const { DB } = require('./objects');
 
 class Connection {
     constructor(ws) {
@@ -36,24 +36,9 @@ const onConnect = function (ws, req, next)
             return;
         }
 
-        //ws.player = World.Objects[req.user.player];
-        ws.player = req.user.player;
-
-        /*
-        let connection = {
-            $nosave: true,
-            send_log(text) {
-                console.log("WS TX", text);
-                ws.send(JSON.stringify({ type: 'log', text: text }));
-            },
-            send_json(data) {
-                console.log("WS TX", data);
-                ws.send(JSON.stringify(data));
-            }
-        };
-        */
         let connection = new Connection(ws);
 
+        ws.player = req.user.player;
         ws.player.connect(connection);
 
         ws.on('close', function (msg) {
@@ -81,9 +66,9 @@ const onMsg = function (ws, msg)
 {
     let args = { player: ws.player, text: msg.text ? msg.text : '' };
     if (msg.id) {
-        if (!(msg.id >= 0 && msg.id < World.Objects.length))
+        args.dobj = DB.get_object(msg.id);
+        if (!args.dobj)
             return args.player.tell("I don't see an object here with id #"+msg.id);
-        args.dobj = World.Objects[msg.id];
     }
 
 
@@ -133,13 +118,13 @@ const onMsg = function (ws, msg)
     else if (msg.type == 'respond') {
         if (!msg.id) return;
         if (msg.cancel)
-            args.player.tell_msg({ type: 'prompt-update', close: true });
+            return args.player.tell_msg({ type: 'prompt-update', close: true, seq: msg.seq });
         args.response = msg.response;
 
         try {
             if (!args.dobj.do_verb_for(args.player, msg.respond, args))
                 return args.player.tell("You can't respond to that");
-            args.player.tell_msg({ type: 'prompt-update', close: true });
+            args.player.tell_msg({ type: 'prompt-update', close: true, seq: msg.seq });
         }
         catch (e) {
             catchError(e, args.player);
