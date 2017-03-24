@@ -9,7 +9,9 @@ const Error = require('./error');
 let Objects = [ ];
 
 const DB = {
-    objects: [ ],
+    Classes: [ ],
+    //objects: [ ],
+    mark: [ ],
     reservedObjects: 32,
 
     initialize(index, list) {
@@ -19,8 +21,14 @@ const DB = {
             Objects[index] = list[key];
             Objects[index].id = index;
             // TODO also add DB[key] = list[key] ???
+            //DB[key] = list[key];
+            DB.Classes[key] = list[key];
             index++;
         }
+    },
+
+    register(cls) {
+        DB.Classes[cls.name] = cls;
     },
 
     get_object(id, filter) {
@@ -32,6 +40,8 @@ const DB = {
     set_object(id, obj) {
         if (id && Objects[id])
             throw "Error: request object id is already being used, " + id;
+        if (id < 0)
+            return id;
         obj.id = id ? id : Objects.length;
         Objects[obj.id] = obj;
         return id;
@@ -47,6 +57,7 @@ const DB = {
 
     loadObjects() {
         console.log("Loading Object DB");
+        let start = Date.now();
         try {
             let data = JSON.parse(fs.readFileSync('data/objects/world.json', 'utf8'));
             DB.parseData(data, data);
@@ -61,6 +72,7 @@ const DB = {
             Objects = null;
             throw e;
         }
+        console.log("Load completed in " + (Date.now() - start) + "ms");
     },
 
     parseData(data, recurse) {
@@ -78,10 +90,13 @@ const DB = {
                     return DB.makeObject(recurse[data['$ref'] - DB.reservedObjects], recurse);
                     //return DB.makeObject(getter(data['$ref']), getter);
                     //getter = function (id) { return data[id - DB.reservedObjects] };
-                //return onRef(data['$ref']);
+            }
+            else if (data['$type'] && data['id']) {
+                // TODO having this here necessitates a garbage collection phase before saving, but leaving this out means only referenced objects will be loaded
+                return DB.makeObject(recurse[data['id'] - DB.reservedObjects], recurse);
             }
             else {
-                let obj = { };
+                let obj = data['$class'] ? new DB.Classes[data['$class']]() : { };
                 for (let k in data) {
                     obj[k] = DB.parseData(data[k], recurse);
                 }
@@ -95,6 +110,7 @@ const DB = {
     makeObject(data, recurse) {
         let id = parseInt(data['id']);
         let tid = parseInt(data['$type']);
+        let pid = data['$prototype'] ? parseInt(data['$prototype']) : null;
         if (tid < 0 || tid >= Objects.reservedObjects)
             throw "Load Error: Unable to load object with a non-standard type id " + tid;
 
@@ -105,6 +121,8 @@ const DB = {
             obj = new Objects[tid]({ id: id });
             if (Objects[id] != obj)
                 throw "Load Error: object id ignored by constructor for #" + id;
+            if (pid !== null)
+                Object.setPrototypeOf(obj, Objects[pid]);
         }
 
         for (let k in data)
@@ -120,11 +138,23 @@ const DB = {
         if (Objects.length <= DB.reservedObjects)
             return;     // don't save if we failed to load objects
         console.log("Saving Object DB -", new Date().toLocaleString());
+        let start = Date.now();
 
+        DB.mark = [ ];
         let list = [ ];
         for (let i = DB.reservedObjects; i < Objects.length; i++) {
             if (Objects[i])
                 list.push(DB.simplifyObject(Objects[i], true));
+        }
+
+        // Delete any unreferenced objects
+        for (let i = DB.reservedObjects; i < Objects.length; i++) {
+            if (!DB.mark[i])
+                console.log("UNREF", i);
+            if (!DB.mark[i] && Objects[i] && Objects[i].recycle === true) {
+                DB.del_object(this);
+                delete list[i - DB.reservedObjects];
+            }
         }
         let output = JSON.stringify(list, undefined, 2) + '\n';
 
@@ -136,27 +166,40 @@ const DB = {
         catch (e) {
             console.log(e.stack);
         }
+        console.log("Save completed in " + (Date.now() - start) + "ms");
     },
 
     simplifyObject(value, noRef) {
         if (Array.isArray(value))
             return value.map((value) => { return DB.simplifyObject(value); });
         else if (typeof value == 'object') {
-            if (value instanceof Root && !noRef)
-                // TODO we could add mark and sweep by recording when a ref is made, and if an object isn't ref'ed, it can be deleted before all the data is written to the json file
+            if (value instanceof Root && !noRef) {
+                DB.mark[value.id] = true;
                 return { $ref: value.id };
+            }
             else if (value === null || value['$nosave'])
                 return null;
             else {
-                let newobj = { };
-                if (value instanceof Root)
-                    newobj['$type'] = value.constructor.id;
+                let jsonobj = { };
+                if (value instanceof Root) {
+                    jsonobj['$type'] = value.constructor.id;
+                    jsonobj['$prototype'] = Object.getPrototypeOf(value).id;
+                    DB.mark[jsonobj['$type']] = true;
+                    DB.mark[jsonobj['$prototype']] = true;
+                }
+                else if (value.constructor && value.constructor != Object && value.constructor.name) {
+                    if (!DB.Classes[value.constructor.name])
+                        console.log("WARN: saving object with a registered class: " + value.constructor.name);
+                    jsonobj['$class'] = value.constructor.name;
+                    DB.mark[jsonobj['$class']] = true;
+                }
+
                 for (let key in value) {
                     if (!value.hasOwnProperty(key))
                         continue;
-                    newobj[key] = DB.simplifyObject(value[key]);
+                    jsonobj[key] = DB.simplifyObject(value[key]);
                 }
-                return newobj;
+                return jsonobj;
             }
         }
         else if (typeof value == 'function')
@@ -197,42 +240,32 @@ console.log(location.name, location);
 */
 
 
+
 class Root {
     constructor(options) {
-        //this.id = options.id ? options.id : Objects.length;
-        //Objects[this.id] = this;
-        DB.set_object(options.id, this);
+        DB.set_object(options ? options.id : undefined, this);
         this.name = "unnamed object";
         this.aliases = [];
         this.location = null;
         this.contents = [];
+
+        if (options && options.cloning) {
+            this.name = options.cloning.name;
+            this.aliases = options.cloning.aliases.slice(0);
+        }
     }
 
-    /*
-    clone() {
-        //let cls = class extends this.constructor {};
-        //cls.prototype = Object.create(this);
-        //return new cls();
-        let obj = new this.constructor();
-        let id = obj.id;
-        Object.assign(obj, this);
-        obj.id = id;
-        obj.location = null;
-        obj.contents = [ ];
-        obj.moveto(this.location);
+    clone(args) {
+        let obj = new this.constructor({ cloning: this });      // cloning allows any constructors to choose to copy over attributes
+        Object.setPrototypeOf(obj, this);
+        if (args && args.player)
+            args.player.tell(this.format("New object created: #{id} {name}", obj));
         return obj;
     }
-    */
 
     recycle() {
-        // TODO check to make sure there are no references?
-        //Objects[this.id] = null;
-        //fs.unlinkSync('data/objects/'+this.id+'.json');
-        // TODO also delete media, or at least put it in an attic so that if the id is recycled, the new user can't access old content
         //this.id = -1;
         this.recycle = true;
-        // TODO you should probably wait until the next db save to do a garbage collection
-        DB.del_object(this);
     }
 
     onLoad() {
@@ -279,7 +312,7 @@ class Root {
 
         let m;
         if (m = name.match(/^#(\d+)$/))
-            return Root.get_object(m[1]);
+            return DB.get_object(m[1]);
 
         for (let i = 0; i < this.contents.length; i++) {
             if (this.contents[i].match_alias(name))
@@ -302,8 +335,9 @@ class Root {
                 return false;
         }
 
-        // TODO check if can leave current location
-        if (!location.acceptable(this))
+        if (this.location && !this.location.ejectable(this))
+            return false;
+        if (location && !location.acceptable(this))
             return false;
 
         let oldLocation = this.location;
@@ -323,6 +357,16 @@ class Root {
         return false;
     }
 
+    ejectable(obj) {
+        return true;
+    }
+
+    /*
+    moveable_by(player) {
+        return false;
+    }
+    */
+
     tell(text) {
         // do nothing
     }
@@ -330,6 +374,15 @@ class Root {
     get title() { return this.name.capitalize(); }
     set title(t) { this.name = t; }
 
+    get_view(player) {
+        return {
+            id: this.id,
+            name: this.name,
+            title: this.title,
+            verbs: this.verbs_for(player),
+            editable: this.editable_by(player),
+        };
+    }
 
     update_contents() {
         this.contents.map(function (item) {
@@ -339,7 +392,19 @@ class Root {
     }
 
     verbs_for(player, all) {
-        return [];
+        let verbs = [ ];
+        if (all)
+            verbs.push('help');
+        if (all && player.isWizard)
+            verbs.push('clone|this', 'recycle|this');
+        return verbs;
+    }
+
+    help(args) {
+        if (args.dobj)
+            args.player.tell("Verbs for " + args.dobj.name + ": " + args.dobj.verbs_for(args.player, true).map((item) => { return item.split('|')[0]; }).join(', '));
+        else
+            args.player.tell("Verbs: " + args.player.verbs_for(args.player, true).concat(args.player.location.verbs_for(args.player, true)).map((item) => { return item.split('|')[0]; }).join(', '));
     }
 
     do_verb_for(player, verb, args) {
@@ -372,13 +437,13 @@ class Root {
         return true;
     }
 
-    check_form(args, name) {
+    check_form(args, name, form) {
         if (!args.response) {
-            args.player.prompt(this.id, name, this.get_form_for(args.player, name));
+            args.player.prompt(this.id, name, form ? form : this.get_form_for(args.player, name));
             return false;
         }
         else
-            this.validate_form_for(args.player, name, args.response);
+            this.validate_form_for(args.player, args.response, form ? form : name);
         return true;
     }
 
@@ -410,22 +475,24 @@ class Root {
         return null;
     }
 
-    validate_form_for(player, name, response) {
+    validate_form_for(player, response, name) {
         let errors = [ ];
-        let form = this.get_form_for(player, name);
+        let form = typeof name == 'string' ? this.get_form_for(player, name) : name;
 
-        for (let i in form.form) {
-            let value = response[form.form[i].name];
-            if (form.form[i].required && !value)
-                errors.push(form.form[i].name + " is required.");
-            if (form.form[i].type == 'text') {
+        for (let i in form.fields) {
+            let value = response[form.fields[i].name];
+            if (form.fields[i].required && !value)
+                errors.push(form.fields[i].label + " is required.");
+            if (form.fields[i].type == 'text') {
                 if (typeof value != 'string')
-                    errors.push(form.form[i].name + " must be a string.");
+                    errors.push(form.fields[i].label + " must be a string.");
             }
-            else if (form.form[i].type == 'file') {
-                if (typeof value != 'string' || value.match(/^(\/\w+)+/))
-                    errors.push(form.form[i].name + " is an invalid filename.");
+            else if (form.fields[i].type == 'file') {
+                if (typeof value != 'string' || !value.match(/^(\/\w+)+/))
+                    errors.push(form.fields[i].label + " is an invalid filename.");
             }
+            if (form.fields[i].validate && !form.fields[i].validate(value))
+                errors.push(form.fields[i].label + " is invalid.");
         }
 
         if (errors.length > 0)

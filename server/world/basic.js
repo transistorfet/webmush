@@ -8,20 +8,12 @@ const { DB, Root } = require('./objects');
 
 
 class Thing extends Root {
-    constructor(options) {
-        super(options);
-        this.description = "You aren't sure what it is.";
-    }
-
     get_view(player) {
-        return {
-            id: this.id,
-            name: this.name,
-            title: this.title,
-            description: this.description,
-            verbs: this.verbs_for(player),
-            editable: this.editable_by(player),
-        };
+        let view = super.get_view(player);
+        view.description = this.description;
+        if (this.icon)
+            view.icon = this.icon;
+        return view;
     }
 
     editable_by(player) {
@@ -31,6 +23,8 @@ class Thing extends Root {
         return props;
     }
 }
+Thing.prototype.description = "You aren't sure what it is.";
+
 
 class Being extends Thing {
     constructor(options) {
@@ -96,13 +90,10 @@ class Being extends Thing {
 }
 
 
-let connectedPlayers = [ ];
-let allPlayers = [ ];
-
 class Player extends Being {
     constructor(options) {
         super(options);
-        allPlayers.push(this);
+        Player.allPlayers.push(this);
         this.connections = [ ];
         this.saved_location = null;
         this.moveto(DB.get_object(Player.limbo));
@@ -123,25 +114,25 @@ class Player extends Being {
 
     connect(conn) {
         this.connections.push(conn);
-        if (connectedPlayers.indexOf(this) == -1)
-            connectedPlayers.push(this);
+        if (Player.connectedPlayers.indexOf(this) == -1)
+            Player.connectedPlayers.push(this);
 
         if (this.connections.length == 1) {
             this.moveto(this.saved_location ? this.saved_location : DB.get_object(Player.lobby));
             if (this.location == DB.get_object(Player.limbo))
                 this.moveto(DB.get_object(Player.lobby));
-            connectedPlayers.forEach((player) => { player.tell("<status>" + this.name + " has connected.") });
+            Player.connectedPlayers.forEach((player) => { player.tell("<status>" + this.name + " has connected.") });
         }
     }
 
     disconnect(conn) {
         this.connections = this.connections.filter((c) => { return c != conn });
-        connectedPlayers.filter((player) => { return player != this; });
+        Player.connectedPlayers.filter((player) => { return player != this; });
 
         if (this.connections.length <= 0) {
             this.saved_location = this.location;
             this.moveto(DB.get_object(Player.limbo));
-            connectedPlayers.forEach((player) => { player.tell("<status>" + this.name + " has disconnected.") });
+            Player.connectedPlayers.forEach((player) => { player.tell("<status>" + this.name + " has disconnected.") });
         }
     }
 
@@ -282,7 +273,7 @@ class Player extends Being {
             if (!this.check_args(args, 'string for/on/of object'))
                 args.player.tell("Usage: /editverb <attribute> for <object>");
             else
-                args.player.prompt(this.id, 'verb', {
+                args.player.prompt(this.id, 'editverb', {
                     label: "Editing " + args.dobjstr + " for #" + args.iobj.id,
                     fields: [
                         { name: 'id', type: 'hidden', value: args.iobj.id },
@@ -328,10 +319,10 @@ class Player extends Being {
             case 'theme':
                 return { label: "Editing Site Theme", fields: [
                     { name: 'theme', type: 'switch', value: typeof this._theme == 'string' ? 'cssfile' : 'options', options: [
-                        { name: 'cssfile', label: 'CSS File', fields: [
+                        { name: 'cssfile', type: 'fields', label: 'CSS File', fields: [
                             { name: 'cssfile', type: 'file', filter: 'text/css', value: typeof this._theme == 'string' ? this._theme : '' },
                         ] },
-                        { name: 'options', label: 'Options', fields: [
+                        { name: 'options', type: 'fields', label: 'Options', fields: [
                             { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this._theme ? this._theme.background : '' },
                             { name: 'font', label: 'Font', type: 'text', value: this._theme ? this._theme.font : '' },
                             { name: 'box', label: 'Box CSS', type: 'text', value: this._theme ? this._theme.box : '' },
@@ -355,9 +346,9 @@ class Player extends Being {
 
     static find(name) {
         name = name.toLowerCase();
-        for (let i = 0; i < allPlayers.length; i++) {
-            if (allPlayers[i].name.toLowerCase() == name)
-                return allPlayers[i];
+        for (let i = 0; i < Player.allPlayers.length; i++) {
+            if (Player.allPlayers[i].name.toLowerCase() == name)
+                return Player.allPlayers[i];
         }
         return null;
     }
@@ -365,7 +356,8 @@ class Player extends Being {
 
 Player.limbo = DB.reservedObjects;
 Player.lobby = DB.reservedObjects + 1;
-
+Player.connectedPlayers = [ ];
+Player.allPlayers = [ ];
 
 class Room extends Thing {
     constructor(options) {
@@ -544,12 +536,20 @@ class Room extends Thing {
     get_form_for(player, name) {
         switch (name) {
             case 'customize':
+                if (!this.style)
+                    this.style = { };
                 return { label: "Customize style for \"" + this.title + "\"", fields: [
-                    { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this.style ? this.style.background : '' },
-                    { name: 'font', label: 'Font', type: 'text', value: this.style ? this.style.font : '' },
-                    { name: 'box', label: 'Box CSS', type: 'text', value: this.style ? this.style.box : '' },
-                    { name: 'title', label: 'Title CSS', type: 'text', value: this.style ? this.style.title : '' },
-                    { name: 'description', label: 'Description CSS', type: 'text', value: this.style ? this.style.description : '' },
+                    { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this.style.background ? this.style.background : '' },
+                    { name: 'backgroundPos', label: 'Background Position', type: 'text', value: this.style.backgroundPos ? this.style.backgroundPos : '', validate: (v) => { return !v || v.match(/^(left|center|right|\d{1,3}\%)(\s+(top|center|bottom|\d{1,3}\%))?$/); } },
+
+                    { name: 'font', label: 'Font', type: 'text', value: this.style.font ? this.style.font : '' },
+                    //{ name: 'font', type: 'switch', value: this.style && typeof this.style.font == 'string' && this.style.font[0] == '/' ? 'file' : 'text', options: [
+                    //    { name: 'file', label: 'Font', type: 'file', value: this.style ? this.style.font : '' },
+                    //    { name: 'text', label: 'Font Name', type: 'text', value: this.style ? this.style.font : '' },
+                    //] },
+                    { name: 'box', label: 'Box CSS', type: 'text', value: this.style.box ? this.style.box : '' },
+                    { name: 'title', label: 'Title CSS', type: 'text', value: this.style.title ? this.style.title : '' },
+                    { name: 'description', label: 'Description CSS', type: 'text', value: this.style.description ? this.style.description : '' },
                 ] };
             default:
                 return super.get_form_for(player, name);
@@ -577,7 +577,7 @@ class Exit extends Thing {
         if (!player.location == this.source)
             return;
 
-        if (this.is_blocked(player))
+        if (this.is_blocked(player))    // TODO || this.source.is_blocked(player) || player.is_blocked(player)      // so you can only allow players to leave if they aren't fighting and they aren't sitting
             player.tell(this.format(this.msg_blocked_you));
         else if (player.moveto(this.dest) && player.location == this.dest) {
             let opposite = this.dest.exits.find((exit) => { return exit.name == this.name });
@@ -597,13 +597,8 @@ class Exit extends Thing {
         if (this.hasDoor)
             verbs.push(this.isOpen ? 'close' : 'open');
         if (player.isWizard)
-            verbs.push('remove');
+            verbs.push('remove', 'up', 'down');
         return verbs;
-    }
-
-    remove(args) {
-        args.text = this.name;
-        this.source.rmexit(args);
     }
 
     open(args) {
@@ -614,6 +609,29 @@ class Exit extends Thing {
 
     }
 
+
+    remove(args) {
+        if (!this.check_form(args, 'remove', { label: this.format("Are you sure you'd like to remove the exit {this.name} #({this.id})?"), submit: 'yes', cancel: 'no' }))
+            return;
+        args.text = this.name;
+        this.source.rmexit(args);
+    }
+
+    up(args) {
+        let i = this.source.exits.indexOf(this);
+        if (i > 0) {
+            this.source.exits.splice(i - 1, 0, this.source.exits.splice(i, 1).shift());
+            this.source.update_contents();
+        }
+    }
+
+    down(args) {
+        let i = this.source.exits.indexOf(this);
+        if (i >= 0 && i < this.source.exits.length - 1) {
+            this.source.exits.splice(i + 1, 0, this.source.exits.splice(i, 1).shift());
+            this.source.update_contents();
+        }
+    }
 
     static opposite_direction(direction) {
         switch (direction) {

@@ -1,0 +1,685 @@
+[
+  {
+    "$type": 4,
+    "id": 32,
+    "name": "Limbo",
+    "aliases": [],
+    "location": null,
+    "contents": [
+      {
+        "$ref": 45
+      },
+      {
+        "$ref": 35
+      },
+      {
+        "$ref": 34
+      }
+    ],
+    "exits": [],
+    "locked": false,
+    "description": "You are floating in a void of blackness.  You cannot make out anything."
+  },
+  {
+    "$type": 4,
+    "id": 33,
+    "name": "The Lobby",
+    "aliases": [],
+    "location": null,
+    "contents": [
+      {
+        "$ref": 41
+      }
+    ],
+    "exits": [
+      {
+        "$ref": 43
+      },
+      {
+        "$ref": 37
+      }
+    ],
+    "locked": false,
+    "description": "You are in an empty hotel lobby.  There isn't anything here yet"
+  },
+  {
+    "$type": 3,
+    "id": 34,
+    "name": "Wizzy",
+    "aliases": [
+      "Wizard"
+    ],
+    "location": {
+      "$ref": 32
+    },
+    "contents": [
+      {
+        "$ref": 40
+      },
+      {
+        "$ref": 39
+      }
+    ],
+    "canfollow": true,
+    "following": {
+      "$ref": 35
+    },
+    "connections": [],
+    "saved_location": {
+      "$ref": 42
+    },
+    "isWizard": true,
+    "position": "standing",
+    "description": "A short person with a long white beard and a pointy blue hat.",
+    "fullname": "Wizzy The Wizard",
+    "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
+    "stats": {
+      "$class": "Character",
+      "test": "true"
+    },
+    "icon": "/media/34/0113c87c7ef0f1bc1042aa0bcd49dfc1"
+  },
+  {
+    "$type": 3,
+    "id": 35,
+    "name": "Lowely",
+    "aliases": [],
+    "location": {
+      "$ref": 32
+    },
+    "contents": [],
+    "canfollow": true,
+    "following": null,
+    "connections": [],
+    "saved_location": {
+      "$ref": 42
+    },
+    "isWizard": false,
+    "position": "sitting",
+    "description": "An anthropormorphic worm with a green hat, and a single big brown boot.",
+    "fullname": "Lowely Worm",
+    "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
+    "stats": {
+      "hp": 20,
+      "maxhp": 20,
+      "xp": 1
+    }
+  },
+  {
+    "$type": 4,
+    "id": 36,
+    "name": "The Coat Check",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 38
+      }
+    ],
+    "locked": false,
+    "description": "There is a counter here for checking your coats and belongings, but no one as behind the counter."
+  },
+  {
+    "$type": 5,
+    "id": 37,
+    "name": "west",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 33
+    },
+    "dest": {
+      "$ref": 36
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 5,
+    "id": 38,
+    "name": "east",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 36
+    },
+    "dest": {
+      "$ref": 33
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 6,
+    "id": 39,
+    "name": "Doohickey",
+    "aliases": [],
+    "location": {
+      "$ref": 34
+    },
+    "contents": [],
+    "description": "It's a general purpose tool for anything you want."
+  },
+  {
+    "$type": 7,
+    "id": 40,
+    "name": "The Party Button",
+    "aliases": [],
+    "location": {
+      "$ref": 34
+    },
+    "contents": [],
+    "description": "It's a small box with a big red button labelled \"Party\".",
+    "icon": "/media/default/img/icons.png?12x14",
+    "msg_use_you": "You press the party button.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying.",
+    "msg_use_others": "{player.title} pulls out a big button and presses it.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying."
+  },
+  {
+    "$type": 2,
+    "id": 41,
+    "name": "Ducky",
+    "aliases": [],
+    "location": {
+      "$ref": 33
+    },
+    "contents": [],
+    "canfollow": false,
+    "following": null,
+    "description": "An small duck is quacking and waddling around here.",
+    "onLoad": "function () { this.annoy() }",
+    "annoy": "function (args) {\n        setTimeout(function () {\n            if (this.location)\n                this.location.say({ player: this, text: \"Quack \".repeat(1 + Math.floor(Math.random() * 3)).trim() });\n            this.annoy();\n        }.bind(this), 30000 + Math.random() * 30000);\n    }"
+  },
+  {
+    "$type": 4,
+    "id": 42,
+    "name": "The Elevators",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 66
+      },
+      {
+        "$ref": 63
+      },
+      {
+        "$ref": 60
+      },
+      {
+        "$ref": 50
+      },
+      {
+        "$ref": 47
+      },
+      {
+        "$ref": 44
+      }
+    ],
+    "locked": false,
+    "description": "You are standing in a grand hallway with elevators on either side.  The elevators will take you to many locations you can visit.",
+    "style": {
+      "background": "/media/34/efa7bf465b427929ce5463427a19e28b",
+      "backgroundPos": "",
+      "font": "",
+      "box": "",
+      "title": "",
+      "description": ""
+    }
+  },
+  {
+    "$type": 5,
+    "id": 43,
+    "name": "north",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 33
+    },
+    "dest": {
+      "$ref": 42
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 5,
+    "id": 44,
+    "name": "Ground",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 42
+    },
+    "dest": {
+      "$ref": 33
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 3,
+    "id": 45,
+    "name": "yoy",
+    "aliases": [],
+    "location": {
+      "$ref": 32
+    },
+    "contents": [],
+    "canfollow": true,
+    "following": null,
+    "connections": [],
+    "saved_location": {
+      "$ref": 33
+    },
+    "isWizard": false,
+    "position": "standing",
+    "description": "You aren't sure what it is.",
+    "fullname": "yoy",
+    "password": "$2a$10$8g2urm7YjH.OT3nY7/ZL5uRWarGYsVJAViS8W1L5v3EF7fugyhljK",
+    "email": ""
+  },
+  {
+    "$type": 4,
+    "id": 46,
+    "name": "The Lounge",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 48
+      }
+    ],
+    "locked": false,
+    "description": "You are in a nice lounge area, with a bar and tables.  A lounge singer is on the piano in the corner.",
+    "audio": "http://ice1.somafm.com/beatblender-128-mp3",
+    "style": {
+      "background": "/media/34/79bace10b19efe600fad45907682dfdd",
+      "backgroundPos": "center center",
+      "font": "/media/default/font/IndieFlower.ttf",
+      "box": "background-repeat: repeat; color: white !important;",
+      "title": "",
+      "description": ""
+    }
+  },
+  {
+    "$type": 5,
+    "id": 47,
+    "name": "Floor 1",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 42
+    },
+    "dest": {
+      "$ref": 46
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 5,
+    "id": 48,
+    "name": "down",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 46
+    },
+    "dest": {
+      "$ref": 42
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 4,
+    "id": 49,
+    "name": "The Realm",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 56
+      },
+      {
+        "$ref": 53
+      },
+      {
+        "$ref": 51
+      }
+    ],
+    "locked": false,
+    "description": "You are standing on the edge of a green field with rolling hills in the distance.  A path leads into The Realm, with a set of turnstiles blocking the way.  A vendor's booth stands to the east with a sign saying \"The Body Shop\".",
+    "style": {
+      "box": ""
+    }
+  },
+  {
+    "$type": 5,
+    "id": 50,
+    "name": "Floor 2",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 42
+    },
+    "dest": {
+      "$ref": 49
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 5,
+    "id": 51,
+    "name": "down",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 49
+    },
+    "dest": {
+      "$ref": 42
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 4,
+    "id": 52,
+    "name": "The Body Shop",
+    "aliases": [],
+    "location": null,
+    "contents": [
+      {
+        "$ref": 58
+      }
+    ],
+    "exits": [
+      {
+        "$ref": 54
+      }
+    ],
+    "locked": false,
+    "description": "You are standing in a strange little shop, with what seem like dead bodies hanging everywhere. A friendly shop keeper greets you, and asks if you'd like a body for adventuring in.",
+    "style": {
+      "poop": "thing",
+      "background": "",
+      "font": "",
+      "box": "",
+      "title": "",
+      "description": ""
+    }
+  },
+  {
+    "$type": 5,
+    "id": 53,
+    "name": "east",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 49
+    },
+    "dest": {
+      "$ref": 52
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 5,
+    "id": 54,
+    "name": "west",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 52
+    },
+    "dest": {
+      "$ref": 49
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 4,
+    "id": 55,
+    "name": "Turnstiles",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 57
+      }
+    ],
+    "locked": false,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 5,
+    "id": 56,
+    "name": "north",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 49
+    },
+    "dest": {
+      "$ref": 55
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is.",
+    "is_blocked": "function (player) { if (!player.stats) return true; return this.constructor.prototype.is_blocked(player); }",
+    "msg_blocked_you": "You must create a character at the body shop before you can enter the realm."
+  },
+  {
+    "$type": 5,
+    "id": 57,
+    "name": "south",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 55
+    },
+    "dest": {
+      "$ref": 49
+    },
+    "hasDoor": false,
+    "isOpen": true,
+    "description": "You aren't sure what it is."
+  },
+  {
+    "$type": 2,
+    "id": 58,
+    "name": "Shopkeeper",
+    "aliases": [],
+    "location": {
+      "$ref": 52
+    },
+    "contents": [],
+    "canfollow": false,
+    "following": null,
+    "description": "A short and cheerful shopkeeper is here.",
+    "verbs_for": "function (player, all) {\n  let verbs = this.constructor.prototype.verbs_for(player, all);\n  verbs.push('create');\n  return verbs;\n}",
+    "purchase": "function (args) {\n  if (args.player.stats && !args.response) {\n    args.player.prompt(this.id, 'purchase', { label: \"You already have an adventuring body.  Would you like to exchange it for a new one?\", submit: 'yes', cancel: 'no' });\n  }\n  else {\n    if (args.player.stats) {\n      args.player.stats = null;\n      args.response = null;\n    }\n    if (!args.response) {\n      args.player.prompt(this.id, 'purchase', { label: \"What kind of adventurer would you like to be?\", fields: [\n        { name: 'class', type: 'select', required: true, options: [\n          \"Warrior\",\n          \"Mage\",\n          \"Thief\",\n          \"Bard\",\n          \"Rogue\",\n        ] },\n      ] });\n    }\n    else {\n      args.player.stats = { hp: 20, maxhp: 20, xp: 1 };\n    }\n  }\n}",
+    "create": "function (args) { DB.Classes.GameUtils.create(args); }"
+  },
+  {
+    "$type": 4,
+    "id": 59,
+    "name": "Hotel Rooms",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 61
+      }
+    ],
+    "locked": false,
+    "description": "There is nothing here at the moment.  It will likely be a place for user-owned rooms"
+  },
+  {
+    "$type": 5,
+    "id": 60,
+    "name": "Floor 3",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 42
+    },
+    "dest": {
+      "$ref": 59
+    },
+    "hasDoor": false,
+    "isOpen": true
+  },
+  {
+    "$type": 5,
+    "id": 61,
+    "name": "down",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 59
+    },
+    "dest": {
+      "$ref": 42
+    },
+    "hasDoor": false,
+    "isOpen": true
+  },
+  {
+    "$type": 4,
+    "id": 62,
+    "name": "The Control Tower",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 64
+      }
+    ],
+    "locked": false,
+    "audio": "http://d.liveatc.net/cyvr2",
+    "style": {
+      "background": "/media/34/13198da9a234f85c608c541a430515e8",
+      "backgroundPos": "center 35%",
+      "font": "",
+      "box": "color: #C0C0C0;",
+      "title": "",
+      "description": "color: #000070;"
+    },
+    "description": "You are in an aircraft control tower looking out onto airport runways busy with airplanes taking off and landing.  The chatter of air traffic control can be heard in the background."
+  },
+  {
+    "$type": 5,
+    "id": 63,
+    "name": "Floor 4",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 42
+    },
+    "dest": {
+      "$ref": 62
+    },
+    "hasDoor": false,
+    "isOpen": true
+  },
+  {
+    "$type": 5,
+    "id": 64,
+    "name": "down",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 62
+    },
+    "dest": {
+      "$ref": 42
+    },
+    "hasDoor": false,
+    "isOpen": true
+  },
+  {
+    "$type": 4,
+    "id": 65,
+    "name": "The Penthouse",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "exits": [
+      {
+        "$ref": 67
+      }
+    ],
+    "locked": false,
+    "description": "The place is a ransacked mess.  During the revolution against the 1%, the original owners were tar and feathered in the streets, and their possessions were looted.  Not much is left here.  How about you start a party in the ruined ashes."
+  },
+  {
+    "$type": 5,
+    "id": 66,
+    "name": "Penthouse",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 42
+    },
+    "dest": {
+      "$ref": 65
+    },
+    "hasDoor": false,
+    "isOpen": true
+  },
+  {
+    "$type": 5,
+    "id": 67,
+    "name": "down",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "source": {
+      "$ref": 65
+    },
+    "dest": {
+      "$ref": 42
+    },
+    "hasDoor": false,
+    "isOpen": true
+  }
+]

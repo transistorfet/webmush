@@ -127,7 +127,7 @@ const onMsg = function (ws, msg)
             args.player.tell_msg({ type: 'prompt-update', close: true, seq: msg.seq });
         }
         catch (e) {
-            catchError(e, args.player);
+            catchError(e, args.player, msg.seq);
         }
     }
     else if (msg.type == 'get') {
@@ -137,18 +137,15 @@ const onMsg = function (ws, msg)
             ws.send(JSON.stringify(data));      // We only send to the requesting connection, and not all user connections
         }
     }
-    else if (msg.type == 'help') {
-        ws.player.tell("Commands: " + ws.player.verbs_for(ws.player, true).concat(ws.player.location.verbs_for(ws.player, true)).map((item) => { return item.split('|')[0]; }).join(', '));
-    }
 
     return;
 };
 
-const catchError = function (e, player) {
+const catchError = function (e, player, seq) {
     if (typeof e == 'string')
         player.tell(e);
     else if (e instanceof Error.Validation)
-        player.tell_msg({ type: 'prompt-update', errors: e.messages });
+        player.tell_msg({ type: 'prompt-update', errors: e.messages, seq: seq });
     else
         throw e;
 };

@@ -14,7 +14,12 @@ const UserInfo = {
     },
 
     receive: function (msg) {
-
+        if (msg.type == 'prefs') {
+            UserInfo.prefs = msg.prefs;
+        }
+        else
+            return;
+        m.redraw();
     },
 };
 

@@ -50,12 +50,15 @@ class Prompt {
 
 const Form = {
     view: function (vnode) {
+        let form = vnode.attrs.prompt.form;
+        let errors = vnode.attrs.prompt.errors;
+        let response = vnode.attrs.prompt.response;
         return [
-            vnode.attrs.prompt.errors ? m('div', { class: 'error' }, vnode.attrs.prompt.errors.map((err) => { return m('span', err); })) : '',
-            m('span', { class: 'tinylabel' }, vnode.attrs.prompt.form.label),
-            vnode.attrs.prompt.form.fields ? m(FieldList, { fields: vnode.attrs.prompt.form.fields, value: vnode.attrs.prompt.response }) : '',
-            m('button', { class: 'tinylabel', onclick: vnode.attrs.onsubmit }, vnode.attrs.prompt.form.submit ? vnode.attrs.prompt.form.submit : 'Submit'), " ",
-            m('button', { class: 'tinylabel', onclick: vnode.attrs.oncancel }, vnode.attrs.prompt.form.cancel ? vnode.attrs.prompt.form.cancel : 'Cancel'),
+            errors ? m('div', { class: 'error' }, errors.map((err) => { return m('div', err); })) : '',
+            m('span', { class: 'tinylabel' }, form.label),
+            form.fields ? m(FieldList, { fields: form.fields, value: response }) : '',
+            m('button', { class: 'tinylabel', onclick: vnode.attrs.onsubmit }, form.submit ? form.submit : 'Submit'), " ",
+            m('button', { class: 'tinylabel', onclick: vnode.attrs.oncancel }, form.cancel ? form.cancel : 'Cancel'),
         ];
     },
 };
@@ -63,16 +66,19 @@ const Form = {
 const Field = function (item) {
     if (item.type == 'switch')
         return m(FieldSwitch, { parent: this, switch: item, onswitch: this.setItem.bind(this, item.name), value: this.value[item.name] });
+    else if (item.type == 'fields')
+        return m(FieldList, { fields: item.fields, onchange: m.withAttr('value', this.setItem.bind(this, item.name)), value: this.value[item.name] });
     else if (item.type == 'file')
         return m(Media.Picker, { onchange: m.withAttr('value', this.setItem.bind(this, item.name)), filter: item.filter, value: this.value[item.name] });
     else if (item.type == 'code')
         return m(CodeEditor, { name: item.name, oninput: m.withAttr('value', this.setItem.bind(this, item.name)), value: this.value[item.name] });
     else if (item.type == 'select')
         return m('select', { name: item.name, onchange: m.withAttr('value', this.setItem.bind(this, item.name)) }, item.options.map(function (opt) {
+            let [value, label, info] = typeof opt == 'object' ? [opt.value, opt.label ? opt.label : opt.value, opt.info] : [opt, opt, ''];
             return m('option', {
-                value: typeof opt == 'object' ? opt.value : opt,
-                selected: (typeof opt == 'object' ? opt.value : opt) == this.value[item.name],
-            }, typeof opt == 'object' ? opt.label : opt);
+                value: value,
+                selected: value == this.value[item.name],
+            }, label);
         }.bind(this)));
     else if (item.type == 'textarea')
         return m('textarea', { name: item.name, oninput: m.withAttr('value', this.setItem.bind(this, item.name)), value: this.value[item.name] });
@@ -80,12 +86,22 @@ const Field = function (item) {
         return m('input', { type: item.type, name: item.name, oninput: m.withAttr('value', this.setItem.bind(this, item.name)), value: this.value[item.name] });
 };
 
+const FieldInfo = function (item) {
+    if (!item.options)
+        return item.info;
+    let selected = item.options.find((opt) => { return opt.value == this.value[item.name]; });
+    return selected ? selected.info : null;
+};
+
 
 const FieldList = {
     oninit: function (vnode) {
-        this.value = vnode.attrs.value || { };
+        this.value = vnode.attrs.value;
         vnode.attrs.fields.map(function (item) {
-            this.value[item.name] = item.value;
+            if (!item.value && item.options)
+                this.value[item.name] = item.options[0].value;
+            else
+                this.value[item.name] = item.value;
         }.bind(this));
         console.log("FORM DATA", this.value);
     },
@@ -103,10 +119,12 @@ const FieldList = {
     },
 
     view: function (vnode) {
-        return m('table', vnode.attrs.fields.map(function (item) {
+        return m('table', { class: 'form-table' }, vnode.attrs.fields.map(function (item) {
+            let info = FieldInfo.call(this, item);
             return m('tr', [
-                m('td', m('label', item.label)),
-                m('td', Field.call(this, item)),
+                m('td', m('label', item.label ? item.label : item.name.capitalize())),
+                m('td', !info ? { colspan: 2 } : undefined, Field.call(this, item)),
+                info ? m('td', m('div', { class: 'option-info' }, info)) : '',
             ]);
         }.bind(this)));
     },
@@ -115,26 +133,24 @@ const FieldList = {
 const FieldSwitch = {
     oninit: function (vnode) {
         console.log("NEW SWITCH", vnode.attrs.switch);
-        this.value = { };
-        vnode.attrs.switch.options.forEach(function (item) {
-            this.value[item.name] = { };
-            item.fields.map(function (subitem) {
-                this.value[item.name][subitem.name] = subitem.value;
-            }.bind(this));
-        }.bind(this));
-
         this.select(vnode, vnode.attrs.switch.value);
     },
 
     onupdate: function (vnode, value) {
-        if (this.value[this.selected.name] != vnode.attrs.value)
-            this.value[this.selected.name] = vnode.attrs.value;
+        //if (this.value[this.selected.name] != vnode.attrs.value)
+        //    this.value[this.selected.name] = vnode.attrs.value;
     },
 
     select: function (vnode, value) {
         this.selected = vnode.attrs.switch.options.find((item) => { return item.name == value; });
         vnode.attrs.parent.setItem(vnode.attrs.switch.name+"_switch", this.selected.name);
-        vnode.attrs.parent.setItem(vnode.attrs.switch.name, this.value[this.selected.name]);
+        let response = !this.selected.fields
+            ? this.selected.value
+            : this.selected.fields.reduce(function (response, item) {
+                response[item.name] = item.value;
+                return response;
+            }, {});
+        vnode.attrs.parent.setItem(vnode.attrs.switch.name, response);
         console.log("SELECT", this.selected, vnode.attrs.parent.value);
         vnode.attrs.onswitch(this.selected);
     },
@@ -148,7 +164,8 @@ const FieldSwitch = {
                     m('label', item.label),
                 ];
             }.bind(this))),
-            m(FieldList, { fields: this.selected.fields, value: this.value[this.selected.name] }),
+            Field.call(vnode.attrs.parent, this.selected),
+            //m(FieldList, { fields: this.selected.fields, value: this.value[this.selected.name] }),
             //FormTable.call(vnode.attrs.parent, this.selected.fields),
         ];
     },
@@ -200,6 +217,18 @@ class Fields {
 class SwitchField extends Fields {
 
 }
+
+
+
+Form.create("Editing style for ???", this.style, [
+    Form.file('background', 'Background Image', '^image'),
+    Form.text('backgroundPos', 'Background Position', (v) => { }),
+    Form.switch('font', [
+        Form.text('fontname', 'Font Name'),
+        Form.file('fontfile', 'Font File', '^application/x-font-'),
+    ]),
+]);
+
 */
 
 

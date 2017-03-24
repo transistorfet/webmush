@@ -9,9 +9,43 @@
     "mimetype": "application/x-font-ttf",
     "public": true
   },
+  "font/AmaticSC-Regular.ttf": {
+    "name": "Amatic",
+    "mimetype": "application/x-font-ttf",
+    "public": true
+  },
+  "font/DancingScript-Bold.ttf": {
+    "name": "Dancing Script",
+    "mimetype": "application/x-font-ttf",
+    "public": true
+  },
+  "font/Griffy-Regular.ttf": {
+    "name": "Griffy",
+    "mimetype": "application/x-font-ttf",
+    "public": true
+  },
+  "font/JimNightshade-Regular.ttf": {
+    "name": "Jim Nightshade",
+    "mimetype": "application/x-font-ttf",
+    "public": true
+  },
+  "font/Raleway-Regular.ttf": {
+    "name": "Raleway",
+    "mimetype": "application/x-font-ttf",
+    "public": true
+  },
+  "font/Tangerine-Bold.ttf": {
+    "name": "Tangerine",
+    "mimetype": "application/x-font-ttf",
+    "public": true
+  },
   "img/icons.png": {
     "name": "Icons",
     "mimetype": "image/png",
-    "public": true
+    "public": true,
+    "width": 16,
+    "height": 16
   }
 }
+
+

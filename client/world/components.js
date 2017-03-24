@@ -138,12 +138,25 @@ const WorldViewContents = {
         return m('table', { class: 'contents' }, vnode.attrs.contents.map(function (item) {
             return m('tr', [
                 // TODO icons???
-                m('td', m('span', { class: 'small-icon', style: item.icon ? item.icon : '' })),
+                //m('td', m('span', { class: 'small-icon' }, item.icon ? m('img', { class: 'small-icon', src: item.icon }) : '')),
+                m('td', WorldSmallIcon.call(this, item)),
                 m('td', m('a', { onclick: World.look.bind(World, item.name) }, item.brief ? item.brief : item.title)),
                 m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
             ]);
         }));
     },
+};
+
+const WorldSmallIcon = function (item) {
+    let icon = item.icon ? item.icon.split('?') : null;
+    if (!icon)
+        return m('span', { class: 'small-icon' });
+    else if (icon[1]) {
+        let args = icon[1].split('x');
+        return m('span', { class: 'small-icon', style: 'background-image: url("'+icon[0]+'"); background-position: -'+(args[1]*16)+'px -'+(args[0]*16)+'px;' });
+    }
+    else if (icon[0])
+        return m('img', { class: 'small-icon', src: icon[0] });
 };
 
 const WorldVerbList = {

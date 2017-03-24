@@ -35,11 +35,13 @@ a:visited {
 .notice {
     border: 1px solid #333;
     background-color: #9f9;
+    padding: 2px;
 }
 
 .error {
     border: 1px solid #333;
     background-color: #f99;
+    padding: 2px;
 }
 
 
@@ -174,17 +176,23 @@ a:visited {
     width: 8em;
 }
 
-table {
+.form-table {
     width: auto;
 }
 
-table td {
+.form-table td {
     white-space: nowrap;
     overflow: hidden;
 }
 
-table td:last-child {
+.form-table td:last-child {
     width: 100%;
+}
+
+.form-table .option-info {
+    white-space: normal;
+    overflow: auto;
+    padding: 2px;
 }
 
 
@@ -196,8 +204,8 @@ table td:last-child {
     display: inline-block;
     height: 16px;
     width: 16px;
-    background-image: url("/assets/img/icons.png");
-    background-position: -32px -64px;
+    /*background-image: url("/assets/img/icons.png");
+    background-position: -32px -64px;*/
 }
 
 img.image-preview {

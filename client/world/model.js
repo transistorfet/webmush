@@ -4,7 +4,6 @@
 const m = require('mithril');
 
 const Forms = require('../forms');
-const UserInfo = require('../user/model');
 const websocket = require('../websocket');
 
 
@@ -31,10 +30,13 @@ const World = {
         else if (msg.type == 'update') {
             if (msg.player)
                 World.view.player = msg.player;
-            if (msg.location)
-                World.view.location = msg.location;
             if (msg.details)
                 World.view.details = msg.details;
+            if (msg.location) {
+                if (World.view.location && World.view.location.id != msg.location.id)
+                    window.history.pushState({ id: msg.location.id }, 'previous_location');
+                World.view.location = msg.location;
+            }
         }
         else if (msg.type == 'prompt') {
             // TODO you should check to see if the previous prompt can be dismissed or not
@@ -47,9 +49,6 @@ const World = {
                 else if (msg.close)
                     World.prompt = null;
             }
-        }
-        else if (msg.type == 'prefs') {
-            UserInfo.prefs = msg.prefs;
         }
         else
             return;
@@ -69,8 +68,6 @@ const World = {
             let [_, cmd, args] = text.trim().match(/^\/(\S*)(?:\s+(.*))?$/);
             if (cmd == 'me')
                 websocket.send({ type: 'emote', text: args });
-            else if (cmd == 'help')
-                websocket.send({ type: 'help', text: args });
             else
                 websocket.send({ type: 'do', verb: cmd, text: args });
         }
@@ -86,7 +83,7 @@ const World = {
     back: function (e) {
         if (e.state && e.state.id) {
             e.preventDefault();
-            websocket.send({ type: 'go', id: e.state.id });
+            websocket.send({ type: 'do', verb: 'go', id: e.state.id });
         }
     },
 
@@ -174,7 +171,7 @@ const Console = {
 World.console = Console;
 
 
-//window.addEventListener('popstate', World.back);
+window.addEventListener('popstate', World.back);
 
 websocket.on('open', World.open);
 websocket.on('msg', World.receive);

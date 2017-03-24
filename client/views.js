@@ -62,6 +62,14 @@ const EditableText = {
     },
 };
 
+String.prototype.capitalize = function () {
+    return this.length > 0 ? this.charAt(0).toUpperCase() + this.slice(1) : '';
+};
+
+String.prototype.capitalizeAll = function () {
+    return this.split().map((word) => { return word.charAt(0).toUpperCase() + this.slice(1); }).join(' ');
+};
+
 
 
 /*

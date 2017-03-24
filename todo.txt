@@ -1,37 +1,20 @@
  
 
 * make input autofocus
-* add logout
-* make help take an arg which can tell you the verbs on an object that wouldn't otherwise be included in normal help
-
-
-* keep rolling backup of object dbs
-* add garbage collection to the save process
-* add way to delete an object with a command
-* reuse object ids when allocating new objects
-* add an object clone command
-* maybe use es5 prototypes instead of es6 classes???
-
 * further refactor console code? do you want to mix models and components?
+* should you move form stuff to lib/, along with server side validation?
 
 
+* delete old backups so they don't multiply
+* reuse object ids when allocating new objects
 * add a command to add attributes, functions to objects, and assign attributes that are not 'editable' (for wizards only)
 * add support for dot names in attributes, so that you can edit 'style.icon', etc
-* add a back command so you can easily go back to where you were, or make it work with back buttons
 
-* make check_form/validate_form take an optional form as an argument (otherwise takes a form name, which is found from get_form)
+
 * add a way to add data to a form without using a hidden field; just an attribute on the prompt object
 * form preview for old file remains, and select doesn't initially show the selected file
 * user theme doesn't currently work; you actually don't need form switcher because the css file can be specified as a default
 * form switcher doesn't work properly, especially with closing/reopening a prompt, it wont reset data
-* should you move form stuff to lib/, along with server side validation?
-
-
-* add typing indicator, for chatting? make it easy to talk to someone who walks away
-* add means of talking to someone who's moving around
-* it shouldn't be possible to move if you're sitting down
-* finish implementing follow... how to move the character
-
 
 * add item icons
 * add public flag to uploads
@@ -39,10 +22,38 @@
 
 
 
+* make data dir selectable through an environment variable?
+
+* it shouldn't be possible to move if you're sitting down; there should be a function of some kind that evaluates if an object can move, before the move occurs
+* finish implementing follow... how to move the character
+* invisible flag, or is_visible() function, which is checked when displaying contents of a room; then monsters could die and hide themselves without moving
+
+* allow spaces in commands, using the / notation; a way of specifying a different display name from the function name, rather than both being the first item
+  maybe even support for @go type commands
+
+
+* add typing indicator, for chatting? make it easy to talk to someone who walks away
+* add means of talking to someone who's moving around
+* add a back command so you can easily go back to where you were, or make it work with back buttons
+* represent exits visually, by arranging them in the correct directions; maybe even an indicator of which direction you came from last
+
+* you need better display of custom messages for things; like 'The door is closed', 'You can't move because you're fighting', 'You're drunk and wander around instead'
+* custom messages for attacking, look at lpmud/discworld code
+
+
+
+* multiple games; but how do you keep items separate between them?
+* maybe use es5 prototypes instead of es6 classes???
+* should the garbage collection phase be separate from saving?
 * what about fancy features, like images, background images, ui effects, colour animations
+* add a means of viewing information about the game without logging in, like what kinds/classes/places/etc exist
+
 * add notifications for activity in the current room, and maybe a way to filter only certain events
-* background audio, uploaded to the media thing, with the option to loop or not, and users have a mute button.
+* allow setting of background audio; option for looping or not, can be a url or a local uploaded file
 * maybe sound effects?
+
+* expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
+* you could make verbs into a class, which has the function, the args string, and the help, and it would automatically do the rest
 
 
 COMMANDS:
@@ -50,9 +61,8 @@ COMMANDS:
 * stand? sit? or should you do fully customizable poses?
 * follow/unfollow
 * favorite location (and have menu at top)
-* add/remove aliases
-* move exits up/down
 * who
+* where
 
 
 RPG:
@@ -66,6 +76,7 @@ RPG:
 * learn/train/etc
 * store, where you list items for sale, and other users can view, buy, offer
 
+* vending machine for items
 * a map item that can take you back to where you've been, or could be found... maybe it would only guide you rather than quicklink you (ie. cause the right exits to be highlighted)
 
 
@@ -74,15 +85,21 @@ PROMPTS:
 * customize room style
 * select/config theme
 * configure profile/preferences
-* reorder exits
 * configure character (in the body shop)
+
+
+AREAS:
+* Control Tower floor, with ATC radio
+* Penthouse (which is ransacked)
+* Private Rooms (hallway or hotel rooms that you can 'rent?')
+
 
 
 IDEAS:
 
-* 'leash' the ducky, which makes it follow you, and also somehow makes it so that in descriptions, it shows you holding the leash... so it makes it
-  clear to others (this is just an example for an effect that crosses beings)
-* a harp that you can 'play', which will play a pre-recorded song that you upload to the server
+    * 'leash' the ducky, which makes it follow you, and also somehow makes it so that in descriptions, it shows you holding the leash... so it makes it
+      clear to others (this is just an example for an effect that crosses beings)
+    * a harp that you can 'play', which will play a pre-recorded song that you upload to the server
 
 
 

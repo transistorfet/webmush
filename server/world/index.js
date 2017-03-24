@@ -21,9 +21,9 @@ let InitialObjects = {
 DB.initialize(0, InitialObjects);
 */
 
-DB.initialize(0, Root);
+DB.initialize(0, { Root });
 DB.initialize(1, Basic);
-DB.initialize(Basic.length + 1, Game);
+DB.initialize(Object.keys(Basic).length + 1, Game);
 
 //
 // Initialize Objects
