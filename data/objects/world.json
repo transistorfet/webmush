@@ -11,14 +11,12 @@
       },
       {
         "$ref": 35
-      },
-      {
-        "$ref": 34
       }
     ],
     "exits": [],
     "locked": false,
-    "description": "You are floating in a void of blackness.  You cannot make out anything."
+    "description": "You are floating in a void of blackness.  You cannot make out anything.",
+    "onLoad": "function () { DB.define('Limbo', this); }"
   },
   {
     "$type": 4,
@@ -40,7 +38,8 @@
       }
     ],
     "locked": false,
-    "description": "You are in an empty hotel lobby.  There isn't anything here yet"
+    "description": "You are in an empty hotel lobby.  There isn't anything here yet",
+    "onLoad": "function () { DB.define('Lobby', this); }"
   },
   {
     "$type": 3,
@@ -50,7 +49,7 @@
       "Wizard"
     ],
     "location": {
-      "$ref": 32
+      "$ref": 52
     },
     "contents": [
       {
@@ -64,9 +63,11 @@
     "following": {
       "$ref": 35
     },
-    "connections": [],
+    "connections": [
+      null
+    ],
     "saved_location": {
-      "$ref": 42
+      "$ref": 52
     },
     "isWizard": true,
     "position": "standing",
@@ -75,9 +76,30 @@
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
     "stats": {
       "$class": "Character",
-      "test": "true"
+      "class": "Warrior",
+      "kind": "Human",
+      "hp": 20,
+      "maxhp": 20,
+      "xp": 0,
+      "fighting": null,
+      "wielding": null,
+      "wearing": {}
     },
-    "icon": "/media/34/0113c87c7ef0f1bc1042aa0bcd49dfc1"
+    "icon": "/media/34/0113c87c7ef0f1bc1042aa0bcd49dfc1",
+    "body": {
+      "$class": "Character",
+      "owner": {
+        "$ref": 34
+      },
+      "class": "Mage",
+      "kind": "Gnome",
+      "hp": 20,
+      "maxhp": 20,
+      "xp": 0,
+      "fighting": null,
+      "wielding": null,
+      "wearing": {}
+    }
   },
   {
     "$type": 3,
@@ -134,8 +156,7 @@
       "$ref": 36
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 5,
@@ -151,8 +172,7 @@
       "$ref": 33
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 6,
@@ -246,8 +266,7 @@
       "$ref": 42
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 5,
@@ -263,8 +282,7 @@
       "$ref": 33
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 3,
@@ -326,8 +344,7 @@
       "$ref": 46
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 5,
@@ -343,8 +360,7 @@
       "$ref": 42
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 4,
@@ -365,10 +381,7 @@
       }
     ],
     "locked": false,
-    "description": "You are standing on the edge of a green field with rolling hills in the distance.  A path leads into The Realm, with a set of turnstiles blocking the way.  A vendor's booth stands to the east with a sign saying \"The Body Shop\".",
-    "style": {
-      "box": ""
-    }
+    "description": "You are standing on the edge of a green field with rolling hills in the distance.  A path leads into The Realm, with a set of turnstiles blocking the way.  A vendor's booth stands to the east with a sign saying \"The Body Shop\"."
   },
   {
     "$type": 5,
@@ -384,8 +397,7 @@
       "$ref": 49
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 5,
@@ -401,11 +413,10 @@
       "$ref": 42
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
-    "$type": 4,
+    "$type": 14,
     "id": 52,
     "name": "The Body Shop",
     "aliases": [],
@@ -413,6 +424,12 @@
     "contents": [
       {
         "$ref": 58
+      },
+      {
+        "$ref": 69
+      },
+      {
+        "$ref": 34
       }
     ],
     "exits": [
@@ -421,15 +438,7 @@
       }
     ],
     "locked": false,
-    "description": "You are standing in a strange little shop, with what seem like dead bodies hanging everywhere. A friendly shop keeper greets you, and asks if you'd like a body for adventuring in.",
-    "style": {
-      "poop": "thing",
-      "background": "",
-      "font": "",
-      "box": "",
-      "title": "",
-      "description": ""
-    }
+    "description": "You are standing in a strange little shop, with what seem like dead bodies hanging everywhere. A friendly shop keeper greets you, and asks if you'd like a body for adventuring in."
   },
   {
     "$type": 5,
@@ -445,8 +454,7 @@
       "$ref": 52
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 5,
@@ -462,8 +470,7 @@
       "$ref": 49
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 4,
@@ -495,7 +502,6 @@
     },
     "hasDoor": false,
     "isOpen": true,
-    "description": "You aren't sure what it is.",
     "is_blocked": "function (player) { if (!player.stats) return true; return this.constructor.prototype.is_blocked(player); }",
     "msg_blocked_you": "You must create a character at the body shop before you can enter the realm."
   },
@@ -513,8 +519,7 @@
       "$ref": 49
     },
     "hasDoor": false,
-    "isOpen": true,
-    "description": "You aren't sure what it is."
+    "isOpen": true
   },
   {
     "$type": 2,
@@ -530,7 +535,7 @@
     "description": "A short and cheerful shopkeeper is here.",
     "verbs_for": "function (player, all) {\n  let verbs = this.constructor.prototype.verbs_for(player, all);\n  verbs.push('create');\n  return verbs;\n}",
     "purchase": "function (args) {\n  if (args.player.stats && !args.response) {\n    args.player.prompt(this.id, 'purchase', { label: \"You already have an adventuring body.  Would you like to exchange it for a new one?\", submit: 'yes', cancel: 'no' });\n  }\n  else {\n    if (args.player.stats) {\n      args.player.stats = null;\n      args.response = null;\n    }\n    if (!args.response) {\n      args.player.prompt(this.id, 'purchase', { label: \"What kind of adventurer would you like to be?\", fields: [\n        { name: 'class', type: 'select', required: true, options: [\n          \"Warrior\",\n          \"Mage\",\n          \"Thief\",\n          \"Bard\",\n          \"Rogue\",\n        ] },\n      ] });\n    }\n    else {\n      args.player.stats = { hp: 20, maxhp: 20, xp: 1 };\n    }\n  }\n}",
-    "create": "function (args) { DB.Classes.GameUtils.create(args); }"
+    "create": "function (args) { DB.Named.RealmUtils.create(args); }"
   },
   {
     "$type": 4,
@@ -681,5 +686,32 @@
     },
     "hasDoor": false,
     "isOpen": true
+  },
+  {
+    "$type": 8,
+    "id": 68,
+    "name": "RealmUtils",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "onLoad": "function () { DB.define('RealmUtils', this); }"
+  },
+  {
+    "$type": 13,
+    "id": 69,
+    "name": "A Goat",
+    "aliases": [],
+    "location": {
+      "$ref": 52
+    },
+    "contents": [],
+    "canfollow": false,
+    "following": null,
+    "body": {
+      "fighting": null
+    },
+    "stats": {
+      "fighting": null
+    }
   }
 ]

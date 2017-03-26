@@ -1,47 +1,4 @@
  
-
-* make input autofocus
-* further refactor console code? do you want to mix models and components?
-* should you move form stuff to lib/, along with server side validation?
-
-
-* delete old backups so they don't multiply
-* reuse object ids when allocating new objects
-* add a command to add attributes, functions to objects, and assign attributes that are not 'editable' (for wizards only)
-* add support for dot names in attributes, so that you can edit 'style.icon', etc
-
-
-* add a way to add data to a form without using a hidden field; just an attribute on the prompt object
-* form preview for old file remains, and select doesn't initially show the selected file
-* user theme doesn't currently work; you actually don't need form switcher because the css file can be specified as a default
-* form switcher doesn't work properly, especially with closing/reopening a prompt, it wont reset data
-
-* add item icons
-* add public flag to uploads
-* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
-
-
-
-* make data dir selectable through an environment variable?
-
-* it shouldn't be possible to move if you're sitting down; there should be a function of some kind that evaluates if an object can move, before the move occurs
-* finish implementing follow... how to move the character
-* invisible flag, or is_visible() function, which is checked when displaying contents of a room; then monsters could die and hide themselves without moving
-
-* allow spaces in commands, using the / notation; a way of specifying a different display name from the function name, rather than both being the first item
-  maybe even support for @go type commands
-
-
-* add typing indicator, for chatting? make it easy to talk to someone who walks away
-* add means of talking to someone who's moving around
-* add a back command so you can easily go back to where you were, or make it work with back buttons
-* represent exits visually, by arranging them in the correct directions; maybe even an indicator of which direction you came from last
-
-* you need better display of custom messages for things; like 'The door is closed', 'You can't move because you're fighting', 'You're drunk and wander around instead'
-* custom messages for attacking, look at lpmud/discworld code
-
-
-
 * multiple games; but how do you keep items separate between them?
 * maybe use es5 prototypes instead of es6 classes???
 * should the garbage collection phase be separate from saving?
@@ -49,11 +6,60 @@
 * add a means of viewing information about the game without logging in, like what kinds/classes/places/etc exist
 
 * add notifications for activity in the current room, and maybe a way to filter only certain events
-* allow setting of background audio; option for looping or not, can be a url or a local uploaded file
 * maybe sound effects?
 
 * expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
 * you could make verbs into a class, which has the function, the args string, and the help, and it would automatically do the rest
+
+* delete old backups so they don't multiply
+* reuse object ids when allocating new objects
+* add support for dot names in attributes, so that you can edit 'style.icon', etc
+* modify setattr to allow new attributes (not checking editable_by)
+
+
+
+* make input autofocus
+* further refactor console code? do you want to mix models and components?
+* should you move form stuff to lib/, along with server side validation?
+
+
+* add a way to add data to a form without using a hidden field; just an attribute on the prompt object
+* form preview for old file remains, and select doesn't initially show the selected file
+* user theme doesn't currently work; you actually don't need form switcher because the css file can be specified as a default
+* form switcher doesn't work properly, especially with closing/reopening a prompt, it wont reset data
+* make room customize css textarea only accessible to certain wizard users (maybe a distinction between wizard and builder?)
+
+* add item icons
+* allow setting of background audio; option for looping or not, can be a url or a local uploaded file
+* add public flag to uploads
+* make data dir selectable through an environment variable?
+
+* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
+* allow spaces in commands, using the / notation; a way of specifying a different display name from the function name, rather than both being the first item
+  maybe even support for @go type commands
+
+
+* remember to make the body shop a normal room again, not a fighting room
+
+* how should you do fighting?  Where should the logic primarily be?  Should fights be stored in a 'fights' list (which would likely be erased after restart, unless saved as
+  part of the game object), or having each character have a fight attribute, which would be restored on reload
+* should 'MortalBeing' be the same as character?  so there is no real difference between players and non-players? or should the players character be swapped in place early on?
+  or should the non-players also have character objects on them?
+* how will you convey the image of your body/character/stats to the user?  They should be expandable or something, maybe a details window opens to show detail?  How is that sent
+  as part of the view?  Or should be use a separate update message to the client, which displays it specially?
+* it shouldn't be possible to move if you're sitting down; there should be a function of some kind that evaluates if an object can move, before the move occurs
+* finish implementing follow... how to move the character
+* invisible flag, or is_visible() function, which is checked when displaying contents of a room; then monsters could die and hide themselves without moving
+
+* you need better display of custom messages for things; like 'The door is closed', 'You can't move because you're fighting', 'You're drunk and wander around instead'
+* custom messages for attacking, look at lpmud/discworld code
+
+
+* add typing indicator, for chatting? make it easy to talk to someone who walks away
+* add means of talking to someone who's moving around
+* add a back command so you can easily go back to where you were, or make it work with back buttons
+* represent exits visually, by arranging them in the correct directions; maybe even an indicator of which direction you came from last
+
 
 
 COMMANDS:
@@ -100,6 +106,9 @@ IDEAS:
     * 'leash' the ducky, which makes it follow you, and also somehow makes it so that in descriptions, it shows you holding the leash... so it makes it
       clear to others (this is just an example for an effect that crosses beings)
     * a harp that you can 'play', which will play a pre-recorded song that you upload to the server
+    * Helena mentioned it's cool when games can be beaten without fighting, even rewarded for not fighting
+    * what if you could make an alternate means of 'battle' such that you have to play a game, like chess, which could be displayed somehow in a viewbox
+      like prompt/details.
 
 
 

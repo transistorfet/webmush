@@ -4,7 +4,8 @@
 const Style = require('../../lib/style');
 const Utils = require('./utils');
 
-const { DB, Root } = require('./objects');
+const DB = require('./db');
+const Root = require('./root');
 
 
 class Thing extends Root {
@@ -189,7 +190,7 @@ class Player extends Being {
             verbs.push('profile|prompt', 'theme|prompt');
         }
         if (all && player.isWizard)
-            verbs.push('teleport', 'examine|object', 'setattr', 'editverb');
+            verbs.push('teleport', 'examine|object', 'getattr', 'setattr', 'editverb');
         return verbs;
     }
 
@@ -246,6 +247,24 @@ class Player extends Being {
             args.dobj.exits.forEach(function (exit) {
                 args.player.tell(this.format("<indent>{name} (#{id}) to {title} (#{dest.id})", exit));
             }.bind(this));
+    }
+
+    getattr(args) {
+        let words = args.text.match(/^\s*(\S+?)\s+(\S+?)$/);
+        if (!words)
+            return args.player.tell("Usage: /getattr <object> <attribute>");
+
+        let item = args.player.find_object(words[1]);
+        if (!item)
+            args.player.tell("I don't see that object here.");
+        let value = item[words[2]];
+        if (typeof value == 'undefined')
+            value = words[2] + " is undefined";
+        else if (typeof value == 'function')
+            value = value.toString();
+        else if (typeof value != 'string')
+            value = JSON.stringify(value);
+        args.player.tell(value);
     }
 
     setattr(args) {
@@ -336,7 +355,7 @@ class Player extends Being {
         }
     }
 
-    static createNew(name, hash, email) {
+    static create_new(name, hash, email) {
         let player = new Player();
         player.title = name;
         player.password = hash;

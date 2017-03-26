@@ -13,6 +13,8 @@ let decorations = {
     'chat': { class: "chat" },
     'shout': { class: "shout" },
     'action': { class: "action" },
+    'attack': { class: "attack" },
+    'defense': { class: "defense" },
     'indent': { style: "padding-left: 1em;" },
 };
 

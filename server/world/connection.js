@@ -1,9 +1,9 @@
 
 'use strict';
 
-const Error = require('./error');
+const Error = require('../error');
 const Utils = require('./utils');
-const { DB } = require('./objects');
+const DB = require('./db');
 
 class Connection {
     constructor(ws) {

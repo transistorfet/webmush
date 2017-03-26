@@ -23,4 +23,11 @@
     color: green;
 }
 
+#world-logs .attack {
+    color: yellow;
+}
+
+#world-logs .defense {
+    color: red;
+}
 

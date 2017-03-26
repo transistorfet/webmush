@@ -1,7 +1,9 @@
 
 'use strict';
 
-const { DB, Root } = require('./objects');
+const DB = require('./db');
+const Root = require('./root');
+
 const Basic = require('./basic');
 const Game = require('./game');
 
@@ -25,6 +27,8 @@ DB.initialize(0, { Root });
 DB.initialize(1, Basic);
 DB.initialize(Object.keys(Basic).length + 1, Game);
 
+
+
 //
 // Initialize Objects
 //
@@ -32,10 +36,12 @@ function initTestObjects() {
     let limbo = new Basic.Room();
     limbo.name = "Limbo";
     limbo.description = "You are floating in a void of blackness.  You cannot make out anything.";
+    limbo.onLoad = function () { DB.define('Limbo', this); }
 
     let lobby = new Basic.Room();
     lobby.name = "The Lobby";
     lobby.description = "You are in an empty hotel lobby.  There isn't anything here yet";
+    lobby.onLoad = function () { DB.define('Lobby', this); }
 
     let wizard = new Basic.Player();
     wizard.isWizard = true;

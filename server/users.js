@@ -68,7 +68,7 @@ router.put('/signup', function(req, res, next) {
     else {
         // TODO verify email??
         let hash = bcrypt.hashSync(req.body.password, saltRounds);
-        let player = World.Player.createNew(req.body.username, hash, req.body.email);
+        let player = World.Player.create_new(req.body.username, hash, req.body.email);
         authenticate(req, res, next);
     }
 });
