@@ -1,9 +1,10 @@
 
 'use strict';
 
-const Error = require('../error');
-const Utils = require('./utils');
 const DB = require('./db');
+const Root = require('./root');
+const Error = require('../error');
+
 
 class Connection {
     constructor(ws) {
@@ -91,13 +92,15 @@ const onMsg = function (ws, msg)
             }
             else {
                 if (msg.text)
-                    Utils.parseObjects(args, msg.text);
+                    Root.parse_preposition(args, msg.text);
 
                 if (!args.player.do_verb_for(args.player, args.verb, args))
-                    if (!args.player.location.do_verb_for(args.player, args.verb, args))
-                        if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
-                            if (!args.iobj || !args.iobj.do_verb_for(args.player, args.verb, args))
-                                args.player.tell("I don't understand that.");
+                    // TODO yeah, we need to make the body a root object first...
+                    //if (args.player.body && !args.player.body.do_verb_for(args.player, args.verb, args))
+                        if (!args.player.location.do_verb_for(args.player, args.verb, args))
+                            if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
+                                if (!args.iobj || !args.iobj.do_verb_for(args.player, args.verb, args))
+                                    args.player.tell("I don't understand that.");
             }
         }
         catch (e) {

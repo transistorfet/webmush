@@ -3,7 +3,30 @@
 
 const m = require('mithril');
 
-const UserInfo = require('./model');
+const websocket = require('./websocket');
+
+
+const UserInfo = {
+    prefs: { },
+
+    open: function (event) {
+        if (Object.keys(UserInfo.prefs).length === 0)
+            websocket.send({ type: 'get', section: 'prefs' });
+    },
+
+    receive: function (msg) {
+        if (msg.type == 'prefs') {
+            UserInfo.prefs = msg.prefs;
+        }
+        else
+            return;
+        m.redraw();
+    },
+};
+
+websocket.on('open', UserInfo.open);
+websocket.on('msg', UserInfo.receive);
+
 
 const Login = {
     username: '',
@@ -108,6 +131,7 @@ const SignUp = {
 };
 
 module.exports = {
+    UserInfo,
     Login,
     SignUp,
 };

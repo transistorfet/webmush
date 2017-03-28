@@ -17,12 +17,48 @@ class Thing extends Root {
         return view;
     }
 
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this == player || player.isWizard)
+            verbs.push('icon|prompt');
+        return verbs;
+    }
+
     editable_by(player) {
         let props = super.editable_by(player);
         if (player.isWizard || this == player)
             props.push('description');
         return props;
     }
+
+    icon(args) {
+        this.icon = args.response.icon;
+        this.location.update_contents();
+    }
+
+    get_form_for(player, name) {
+        switch (name) {
+            case 'icon':
+                return { label: "Set Icon", fields: [
+                    { name: 'icon', type: 'file', filter: '^image', value: this.icon ? this.icon : '' },
+                ] };
+            default:
+                return super.get_form_for(player, name);
+        }
+    }
+
+    /*
+    icon: new Verb({
+        pattern: 'icon|prompt',
+        perms: (player) => { return this == player || player.isWizard },
+        form: Form.create('Set Icon', [ Form.File('icon', '^image', this.icon ? this.icon : '') ]),
+        do: function (args) {
+            this.icon = args.response.icon;
+            this.location.update_contents();
+        },
+        help:   `Set the icon for this object`,
+    });
+    */
 }
 Thing.prototype.description = "You aren't sure what it is.";
 
@@ -168,9 +204,11 @@ class Player extends Being {
 
     update_view(section) {
         let msg = { type: 'update' };
-        if (!section || section == 'player')
+        if (!section || section.match(/(^|,)player(,|$)/))
             msg.player = this.get_view(this);
-        if (!section || section == 'location')
+        if (this.body && (!section || section.match(/(^|,)body(,|$)/)))
+            msg.body = this.body.get_view(this);
+        if (!section || section.match(/(^|,)location(,|$)/))
             msg.location = this.location.get_view(this);
         this.tell_msg(msg);
     }
@@ -315,7 +353,7 @@ class Player extends Being {
         console.log("PROFILE", args.response);
         if (args.response.aliases)
             this.aliases = args.response.aliases.split(/\s*,\s*/);
-        // TODO set profile picture
+        this.icon = args.response.icon;
         this.update_contents();
     }
 
@@ -332,8 +370,9 @@ class Player extends Being {
         switch (name) {
             case 'profile':
                 return { label: "Your Profile", fields: [
-                    { name: 'picture', label: 'Avatar', type: 'file', filter: '^image', value: this.profile.picture ? this.profile.picture : '' },
+                    { name: 'icon', label: 'Avatar', type: 'file', filter: '^image', value: this.icon ? this.icon : '' },
                     { name: 'aliases', label: 'Aliases', type: 'text', value: this.aliases ? this.aliases.join(', ') : '' },
+                    //{ name: 'email', label: 'Email Address', type: 'text', value: this.email },
                 ] };
             case 'theme':
                 return { label: "Editing Site Theme", fields: [

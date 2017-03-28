@@ -196,6 +196,12 @@ a:visited {
 }
 
 
+.column-display > * {
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 4px;
+}
+
 .tinylabel {
     font-size: 0.6em;
 }

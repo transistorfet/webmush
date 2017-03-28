@@ -8,7 +8,7 @@
     "start": "node index.js",
     "build": "node_modules/.bin/webpack",
     "dev": "npm run build && npm start",
-    "nodemon": "nodemon --ignore assets/js --ignore data --exec npm run dev",
+    "nodemon": "nodemon --ignore build --ignore data --exec npm run dev",
     "test": "echo \"Error: no test specified\" && exit 1",
     "wc": "wc client/*.js client/*/*.js server/*.js server/*/*.js lib/*.js lib/*/*.js"
   },
@@ -28,6 +28,9 @@
     "passport-local": "1.0.0"
   },
   "devDependencies": {
+    "css-loader": "0.27.3",
+    "extract-text-webpack-plugin": "2.1.0",
+    "style-loader": "0.16.0",
     "webpack": "2.2.1"
   }
 }

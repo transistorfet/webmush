@@ -27,7 +27,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 let requireAuth = (req, res, next) => { if (!req.isAuthenticated()) res.status(400).send(); else next() };
 
-app.use('/assets', express.static('assets'));
+app.use('/build', express.static('build'));
 
 app.use('/user', require('./users'));
 app.ws('/socket', require('./world/connection'));

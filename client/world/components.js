@@ -3,10 +3,12 @@
 
 const m = require('mithril');
 
+const Strings = require('../../lib/strings');
+
 const View = require('../views');
-const Forms = require('../forms');
 const World = require('./model');
 const Decorations = require('./decorations');
+const Media = require('../media/components');
 
 
 const WorldArea = {
@@ -69,7 +71,7 @@ const WorldView = {
             m(WorldViewLocation, { location: vnode.attrs.view.location }),
             vnode.attrs.prompt ? m(View.Box, { class: 'prompt-info slide-down' }, vnode.attrs.prompt.render()) : '',
             vnode.attrs.view.details ? m(WorldViewDetails, { details: vnode.attrs.view.details }) : '',
-            m(WorldViewPlayer, { player: vnode.attrs.view.player }),
+            m(WorldViewPlayer, { player: vnode.attrs.view.player, body: vnode.attrs.view.body }),
         ];
     },
 };
@@ -115,6 +117,47 @@ const WorldViewPlayer = {
                 m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.player })),
                 m('span', { class: 'tinylabel' }, "You are carrying"),
                 m(WorldViewContents, { contents: vnode.attrs.player.contents }),
+                //m('span', { class: 'tinylabel' }, "Your status is"),
+                m(WorldViewPlayerBody, { body: vnode.attrs.body }),
+            ])
+        );
+    },
+};
+
+const WorldViewPlayerBody = {
+    view: function (vnode) {
+        if (!vnode.attrs.body)
+            return [];
+
+        return (
+            m(View.Box, { class: 'body', borderless: true }, [ m('span', { class: 'tinylabel' }, "You're status is"), '',
+                m('div', { class: 'column-display' }, [
+                    m('table', [
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "Kind:"),
+                            m('td', m('a', { onclick: World.look.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "Class:"),
+                            m('td', m('a', { onclick: World.look.bind(World, vnode.attrs.body.class) }, vnode.attrs.body.class)),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "HP:"),
+                            m('td', vnode.attrs.body.hp),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "You're fighting:"),
+                            m('td', vnode.attrs.body.fighting),
+                        ]),
+                    ]),
+                    m('table', [
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "Kind:"),
+                            // TODO fix this link to get info on your kind, displayed in the details window maybe?  the details window might have to become more generic
+                            m('td', m('a', { onclick: World.look.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
+                        ]),
+                    ])
+                ])
             ])
         );
     },
@@ -137,26 +180,12 @@ const WorldViewContents = {
     view: function (vnode) {
         return m('table', { class: 'contents' }, vnode.attrs.contents.map(function (item) {
             return m('tr', [
-                // TODO icons???
-                //m('td', m('span', { class: 'small-icon' }, item.icon ? m('img', { class: 'small-icon', src: item.icon }) : '')),
-                m('td', WorldSmallIcon.call(this, item)),
+                m('td', Media.SmallIcon.call(this, item.icon)),
                 m('td', m('a', { onclick: World.look.bind(World, item.name) }, item.brief ? item.brief : item.title)),
                 m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
             ]);
         }));
     },
-};
-
-const WorldSmallIcon = function (item) {
-    let icon = item.icon ? item.icon.split('?') : null;
-    if (!icon)
-        return m('span', { class: 'small-icon' });
-    else if (icon[1]) {
-        let args = icon[1].split('x');
-        return m('span', { class: 'small-icon', style: 'background-image: url("'+icon[0]+'"); background-position: -'+(args[1]*16)+'px -'+(args[0]*16)+'px;' });
-    }
-    else if (icon[0])
-        return m('img', { class: 'small-icon', src: icon[0] });
 };
 
 const WorldVerbList = {

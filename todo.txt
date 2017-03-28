@@ -8,57 +8,66 @@
 * add notifications for activity in the current room, and maybe a way to filter only certain events
 * maybe sound effects?
 
-* expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
-* you could make verbs into a class, which has the function, the args string, and the help, and it would automatically do the rest
-
 * delete old backups so they don't multiply
 * reuse object ids when allocating new objects
 * add support for dot names in attributes, so that you can edit 'style.icon', etc
 * modify setattr to allow new attributes (not checking editable_by)
-
-
+* allow spaces in commands, using the / notation; a way of specifying a different display name from the function name, rather than both being the first item
+  maybe even support for @go type commands
 
 * make input autofocus
 * further refactor console code? do you want to mix models and components?
 * should you move form stuff to lib/, along with server side validation?
 
 
-* add a way to add data to a form without using a hidden field; just an attribute on the prompt object
-* form preview for old file remains, and select doesn't initially show the selected file
-* user theme doesn't currently work; you actually don't need form switcher because the css file can be specified as a default
-* form switcher doesn't work properly, especially with closing/reopening a prompt, it wont reset data
-* make room customize css textarea only accessible to certain wizard users (maybe a distinction between wizard and builder?)
 
-* add item icons
+* add a way to add data to a form without using a hidden field; just an attribute on the prompt object
+* you actually don't need form switcher in theme because the css file can be specified as a default
+* make room customize css textarea only accessible to certain wizard users (maybe a distinction between wizard and builder?)
+* add a feedback system to prompt, so that it can send back info and get a response that updates the prompt, and you could use this
+  to implement a chess type game, where you make a move, and it updates the view with the new positions
+
 * allow setting of background audio; option for looping or not, can be a url or a local uploaded file
 * add public flag to uploads
-* make data dir selectable through an environment variable?
-
-* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
-* allow spaces in commands, using the / notation; a way of specifying a different display name from the function name, rather than both being the first item
-  maybe even support for @go type commands
+* add image editor (client side?) that allows you to resize, pan, zoom, etc
+* add builder permissions, so they can build but not do anything (how will permissions work?)
 
 
-* remember to make the body shop a normal room again, not a fighting room
 
-* how should you do fighting?  Where should the logic primarily be?  Should fights be stored in a 'fights' list (which would likely be erased after restart, unless saved as
-  part of the game object), or having each character have a fight attribute, which would be restored on reload
-* should 'MortalBeing' be the same as character?  so there is no real difference between players and non-players? or should the players character be swapped in place early on?
-  or should the non-players also have character objects on them?
-* how will you convey the image of your body/character/stats to the user?  They should be expandable or something, maybe a details window opens to show detail?  How is that sent
-  as part of the view?  Or should be use a separate update message to the client, which displays it specially?
-* it shouldn't be possible to move if you're sitting down; there should be a function of some kind that evaluates if an object can move, before the move occurs
-* finish implementing follow... how to move the character
-* invisible flag, or is_visible() function, which is checked when displaying contents of a room; then monsters could die and hide themselves without moving
-
+* expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
+* you could make verbs into a class, which has the function, the args string, and the help, and it would automatically do the rest
 * you need better display of custom messages for things; like 'The door is closed', 'You can't move because you're fighting', 'You're drunk and wander around instead'
 * custom messages for attacking, look at lpmud/discworld code
 
 
+
+* should 'MortalBeing' be the same as character?  so there is no real difference between players and non-players? or should the players character be swapped in place early on?
+  or should the non-players also have character objects on them?
+
+* need a way to link to class/kind info; should it use the details window, and make details a more generic display element?  It could do a verb
+  on the character/body object... how will the player object know to pass on commands to the character?
+
+* if you want the character/body verbs to appear next to the player ones, you'll have to proxy the body into the verbs_for and do_verbs_for functions
+* how will you convey the image of your body/character/stats to the user?  How can it be expandable/object-specified
+* you need a means of templating; you can make json encodable heirachies, or arrays of direct m() calls, or you could send a function as text, unfunctionify it, and
+  call it with the data in order to update the code.... that's the most dangerous, but it's also the most versitile
+* could you highlight stats that change, like during combat when your hit, your hp flashes red with the new number
+
+
+
+* make data dir selectable through an environment variable?
+* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
+
+* finish implementing follow... how to move the character
+* it shouldn't be possible to move if you're sitting down; there should be a function of some kind that evaluates if an object can move, before the move occurs
+* invisible flag, or is_visible() function, which is checked when displaying contents of a room; then monsters could die and hide themselves without moving
+
+* remember to make the body shop a normal room again, not a fighting room
+
 * add typing indicator, for chatting? make it easy to talk to someone who walks away
 * add means of talking to someone who's moving around
-* add a back command so you can easily go back to where you were, or make it work with back buttons
 * represent exits visually, by arranging them in the correct directions; maybe even an indicator of which direction you came from last
+* add a back command so you can easily go back to where you were, or make it work with back buttons
 
 
 

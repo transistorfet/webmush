@@ -1,8 +1,11 @@
 
 'use strict';
 
-const Error = require('../error');
+const Strings = require('../../lib/strings');
+
 const DB = require('./db');
+const Utils = require('./utils');
+const Error = require('../error');
 
 
 class Root {
@@ -37,6 +40,8 @@ class Root {
     }
 
     format(text, args) {
+        return Strings.format.call(this, text, args);
+/*
         let self = this;
         return text.replace(/{([\^-])?([\w.]+)}/g, function(match, mod, name) { 
             let parts = name.split('.');
@@ -58,6 +63,7 @@ class Root {
             else
                 return value;
         });
+*/
     }
 
     match_alias(name) {
@@ -262,7 +268,28 @@ class Root {
         if (errors.length > 0)
             throw new Error.Validation(errors);
     }
-}
+
+    static parse_command(player, verb, text) {
+        let args = { player: player, text: text, verb: verb.toLowerCase() };
+        Root.parse_preposition(args, text);
+        return args;
+    }
+
+    static parse_preposition(args, text) {
+        let parts = Utils.split_preposition(text);
+        if (!parts) {
+            args.dobjstr = text;
+            args.dobj = args.player.find_object(text);
+        }
+        else {
+            args.dobjstr = parts[1];
+            args.prep = parts[2].toLowerCase();
+            args.iobjstr = parts[3];
+            args.dobj = args.player.find_object(args.dobjstr);
+            args.iobj = args.player.find_object(args.iobjstr);
+        }
+    }
+};
 
 var typeLetters = {
     n: (v) => { return typeof v == 'number'; },

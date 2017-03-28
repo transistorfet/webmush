@@ -74,32 +74,8 @@
     "description": "A short person with a long white beard and a pointy blue hat.",
     "fullname": "Wizzy The Wizard",
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
-    "stats": {
-      "$class": "Character",
-      "class": "Warrior",
-      "kind": "Human",
-      "hp": 20,
-      "maxhp": 20,
-      "xp": 0,
-      "fighting": null,
-      "wielding": null,
-      "wearing": {}
-    },
-    "icon": "/media/34/0113c87c7ef0f1bc1042aa0bcd49dfc1",
-    "body": {
-      "$class": "Character",
-      "owner": {
-        "$ref": 34
-      },
-      "class": "Mage",
-      "kind": "Gnome",
-      "hp": 20,
-      "maxhp": 20,
-      "xp": 0,
-      "fighting": null,
-      "wielding": null,
-      "wearing": {}
-    }
+    "icon": "/media/default/img/icons.png?12x6",
+    "_theme": "/media/default/theme/world.css"
   },
   {
     "$type": 3,
@@ -114,18 +90,13 @@
     "following": null,
     "connections": [],
     "saved_location": {
-      "$ref": 42
+      "$ref": 49
     },
     "isWizard": false,
     "position": "sitting",
     "description": "An anthropormorphic worm with a green hat, and a single big brown boot.",
     "fullname": "Lowely Worm",
-    "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
-    "stats": {
-      "hp": 20,
-      "maxhp": 20,
-      "xp": 1
-    }
+    "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu"
   },
   {
     "$type": 4,
@@ -381,7 +352,8 @@
       }
     ],
     "locked": false,
-    "description": "You are standing on the edge of a green field with rolling hills in the distance.  A path leads into The Realm, with a set of turnstiles blocking the way.  A vendor's booth stands to the east with a sign saying \"The Body Shop\"."
+    "description": "You are standing on the edge of a green field with rolling hills in the distance.  A path leads into The Realm, with a set of turnstiles blocking the way.  A vendor's booth stands to the east with a sign saying \"The Body Shop\".",
+    "style": {}
   },
   {
     "$type": 5,
@@ -416,7 +388,7 @@
     "isOpen": true
   },
   {
-    "$type": 14,
+    "$type": 12,
     "id": 52,
     "name": "The Body Shop",
     "aliases": [],
@@ -502,7 +474,7 @@
     },
     "hasDoor": false,
     "isOpen": true,
-    "is_blocked": "function (player) { if (!player.stats) return true; return this.constructor.prototype.is_blocked(player); }",
+    "is_blocked": "function (player) { if (!player.body) return true; return this.constructor.prototype.is_blocked(player); }",
     "msg_blocked_you": "You must create a character at the body shop before you can enter the realm."
   },
   {
@@ -534,8 +506,8 @@
     "following": null,
     "description": "A short and cheerful shopkeeper is here.",
     "verbs_for": "function (player, all) {\n  let verbs = this.constructor.prototype.verbs_for(player, all);\n  verbs.push('create');\n  return verbs;\n}",
-    "purchase": "function (args) {\n  if (args.player.stats && !args.response) {\n    args.player.prompt(this.id, 'purchase', { label: \"You already have an adventuring body.  Would you like to exchange it for a new one?\", submit: 'yes', cancel: 'no' });\n  }\n  else {\n    if (args.player.stats) {\n      args.player.stats = null;\n      args.response = null;\n    }\n    if (!args.response) {\n      args.player.prompt(this.id, 'purchase', { label: \"What kind of adventurer would you like to be?\", fields: [\n        { name: 'class', type: 'select', required: true, options: [\n          \"Warrior\",\n          \"Mage\",\n          \"Thief\",\n          \"Bard\",\n          \"Rogue\",\n        ] },\n      ] });\n    }\n    else {\n      args.player.stats = { hp: 20, maxhp: 20, xp: 1 };\n    }\n  }\n}",
-    "create": "function (args) { DB.Named.RealmUtils.create(args); }"
+    "create": "function (args) { DB.Named.RealmUtils.create(args); }",
+    "icon": "/media/default/img/icons.png?10x6"
   },
   {
     "$type": 4,
@@ -697,7 +669,7 @@
     "onLoad": "function () { DB.define('RealmUtils', this); }"
   },
   {
-    "$type": 13,
+    "$type": 9,
     "id": 69,
     "name": "A Goat",
     "aliases": [],
@@ -707,11 +679,12 @@
     "contents": [],
     "canfollow": false,
     "following": null,
-    "body": {
-      "fighting": null
-    },
-    "stats": {
-      "fighting": null
-    }
+    "hp": 20,
+    "maxhp": 20,
+    "xp": 0,
+    "fighting": null,
+    "wimpy": 0.2,
+    "wielding": null,
+    "wearing": {}
   }
 ]

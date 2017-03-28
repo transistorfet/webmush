@@ -4,7 +4,7 @@
 const m = require('mithril');
 
 const websocket = require('./websocket');
-const UserInfo = require('./user/model');
+const { UserInfo } = require('./users');
 
 const Page = function(content, require)
 {

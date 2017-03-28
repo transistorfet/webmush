@@ -9,6 +9,10 @@ const FileInfo = {
     files: [ ],
     error: '',
 
+    get: function (path) {
+        return FileInfo.files.find((file) => { return file.path == path; });
+    },
+
     load: function (done, reload) {
         if (!reload && FileInfo.files.length > 0)
             return;

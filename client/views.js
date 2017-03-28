@@ -8,13 +8,13 @@ const Box = {
     expand: true,
     view: function (vnode) {
         if (!vnode.state.expand) {
-            return m('div[class=viewbox]', vnode.attrs, [
+            return m(!vnode.attrs.borderless ? 'div[class=viewbox]' : 'div', vnode.attrs, [
                 m('a', { class: 'viewbox-expand', onclick: () => { vnode.state.expand = true; } }, 'more'),
                 vnode.children.slice(0, 2),
             ]);
         }
         else {
-            return m('div[class=viewbox]', vnode.attrs, [
+            return m(!vnode.attrs.borderless ? 'div[class=viewbox]' : 'div', vnode.attrs, [
                 m('a', { class: 'viewbox-expand', onclick: () => { vnode.state.expand = false; } }, 'less'),
                 vnode.children,
             ]);
@@ -60,14 +60,6 @@ const EditableText = {
         else
             return m('span', { onclick: () => { this.value = vnode.attrs.value; } }, vnode.attrs.value);
     },
-};
-
-String.prototype.capitalize = function () {
-    return this.length > 0 ? this.charAt(0).toUpperCase() + this.slice(1) : '';
-};
-
-String.prototype.capitalizeAll = function () {
-    return this.split().map((word) => { return word.charAt(0).toUpperCase() + this.slice(1); }).join(' ');
 };
 
 

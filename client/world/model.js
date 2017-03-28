@@ -30,6 +30,8 @@ const World = {
         else if (msg.type == 'update') {
             if (msg.player)
                 World.view.player = msg.player;
+            if (msg.body)
+                World.view.body = msg.body;
             if (msg.details)
                 World.view.details = msg.details;
             if (msg.location) {
@@ -124,6 +126,7 @@ const Console = {
     },
 
     log(text) {
+        // TODO you could add support for newline characters in the text string here
         Console.logs.push(text);
         Console.logs = Console.logs.slice(-200);
         window.sessionStorage.setItem('logs', JSON.stringify(Console.logs));

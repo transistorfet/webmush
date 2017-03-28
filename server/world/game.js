@@ -19,6 +19,7 @@ class GameUtils extends Root {
         }
         else {
             if (args.player.body) {
+                args.player.body.recycle();
                 args.player.body = null;
                 args.response = null;
             }
@@ -26,8 +27,7 @@ class GameUtils extends Root {
             if (!this.check_form(args, 'create'))
                 return;
 
-            args.player.body = new Character(args.player, args.response.class, args.response.kind);
-            console.log("CHR", args.player.body);
+            args.player.body = new PlayerCharacter(args.player, args.response.kind, args.response.class);
             args.player.tell("You've created a new character!");
         }
     }
@@ -36,8 +36,9 @@ class GameUtils extends Root {
         switch (name) {
             case 'create':
                 return { label: "What kind of adventurer would you like to be?", fields: [
-                    { name: 'class', type: 'select', required: true, options: Classes.map((kind) => { return { value: kind.name, info: kind.info }; }) },
                     { name: 'kind', type: 'select', required: true, options: Kinds.map((kind) => { return { value: kind.name, info: kind.info }; }) },
+                    { name: 'class', type: 'select', required: true, options: Classes.map((kind) => { return { value: kind.name, info: kind.info }; }) },
+                    // TODO background/education level and type/family wealth/etc...
                 ] };
             default:
                 return null;
@@ -82,35 +83,35 @@ const Kinds = [
     {
         name: "Gnome",
         info:
-        `The Gnome race has created some of the most remarkable
-        clockwork inventions, rivalled only by the Hephestians in their expertise
-        and craftsmanship.  However, their culture has suffered several setbacks,
-        not the least of which was the fall of the Gnome capital, Gnomevale, when
-        the Nameless One awoke on Crypt.  Nevertheless, the quick-thinking,
-        fast-talking Gnomes continue to create mechanical contraptions with the
-        hope that they will one day be able to reclaim their home.
-        Geoph leads the Gnome race.`,
+            `The Gnome race has created some of the most remarkable
+            clockwork inventions, rivalled only by the Hephestians in their expertise
+            and craftsmanship.  However, their culture has suffered several setbacks,
+            not the least of which was the fall of the Gnome capital, Gnomevale, when
+            the Nameless One awoke on Crypt.  Nevertheless, the quick-thinking,
+            fast-talking Gnomes continue to create mechanical contraptions with the
+            hope that they will one day be able to reclaim their home.
+            Geoph leads the Gnome race.`,
         size: "80-140",
         ac: 10,
         damage: 1
     },
 ];
 
-class Character {
-    constructor(owner, cls, kind) {
-        if (!owner || !cls || !kind)
-            return;
-        this.owner = owner;
-        this.class = cls;
+
+class MortalBeing extends Basic.Being {
+    constructor(options, kind, cls) {
+        super(options);
+        MortalBeing.list.push(this);
         this.kind = kind;
+        this.class = cls;
         this.hp = 20;
         this.maxhp = 20;
         this.xp = 0;
         this.fighting = null;
+        this.wimpy = 0.2;
         this.wielding = null;
         this.wearing = { };
     }
-
 
     timestep() {
         // TODO do... things...
@@ -120,86 +121,17 @@ class Character {
             this.owner.update_view('player');
         }
     }
-}
-DB.register(Character);
 
-
-class WearableItem extends Basic.Item {
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (this.location == player && player.body)
-            verbs.push(player.body.wielding != this ? 'wear|this' : 'unwear|this');
-        return verbs;
-    }
-
-    wear(args) {
-
-    }
-
-    unwear(args) {
-
+    attack(opponent) {
+        // TODO handle attack phase for this character/mortalbeing??
     }
 }
+MortalBeing.list = [ ];
 
 
-class WieldableItem extends Basic.Item {
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (this.location == player && player.body)
-            verbs.push(player.body.wielding != this ? 'wield|this' : 'unwield|this');
-        return verbs;
-    }
-
-    wield(args) {
-        if (!args.player.body)
-            args.player.tell("You must have created a character in order to wield this.");
-        else if (args.dobj.location != args.player)
-            args.player.tell("You have to be carrying this to wield it");
-        else {
-            args.player.body.wielding = this;
-            args.player.update_view('player');
-        }
-    }
-
-    unwield(args) {
-        args.player.body.wielding = null;
-        args.player.update_view('player');
-    }
-}
-
-
-class EdibleItem extends Basic.Item {
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (this.location == player)
-            verbs.push('eat|this');
-        return verbs;
-    }
-
-    eat(args) {
-
-    }
-}
-
-
-class DrinkableItem extends Basic.Item {
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (this.location == player)
-            verbs.push('drink|this');
-        return verbs;
-    }
-
-    drink(args) {
-
-    }
-}
-
-
-class MortalBeing extends Basic.Being {
+class NonPlayerCharacter extends MortalBeing {
     constructor(options) {
         super(options);
-        MortalBeing.list.push(this);
         this.body = { };
     }
 
@@ -219,10 +151,81 @@ class MortalBeing extends Basic.Being {
     }
 
     timestep() {
+        super.timestep();
         // TODO move around, attack maybe
     }
 }
-MortalBeing.list = [ ];
+
+
+// TODO what if you made this inherit from MortalBeing, and put the stats stuff there; character would be an owned mortalbeing that can be modified
+class PlayerCharacter extends MortalBeing {
+    constructor(options, kind, cls, owner) {
+        super(options, kind, cls);
+        if (!owner || !kind || !cls)
+            return;
+        this.owner = owner;
+    }
+
+    get_view(player) {
+        let view = super.get_view(player);
+        view.kind = this.kind;
+        view.class = this.class;
+        view.hp = this.hp;
+        view.maxhp = this.maxhp;
+        view.xp = this.xp;
+        view.fighting = this.fighting ? this.fighting.name : 'nobody';
+        return view;
+    }
+
+    get_template(player) {
+        if (player != this && player != this.owner) {
+            return function (context) {
+                return m('table', { class: 'body' }, 'hey');
+            };
+        }
+        else {
+            return function (context) {
+                // TODO full info
+                return m('table', { class: 'body' }, 'hey');
+            };
+        }
+        return [
+            { type: 'table', children: [
+                'kind',
+                'class',
+                [ "HP", 'hp' ],
+            ] },
+            //T('table', [ T('data', 'kind'), T('data', 'hp', 'HP') ])
+        ];
+    }
+
+
+    update_contents() {
+        this.owner.update_view('body');
+    }
+
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this == player || this.owner == player) {
+
+        }
+        if (all)
+            verbs.push('help/info');
+        return verbs;
+    }
+
+    help(args) {
+        //let kind = DB.Named.RealmUtils.
+        let kind = Kinds.find((kind) => { return kind.name == args.text; });
+        if (kind) {
+            args.player.tell("Kind: " + kind.name);
+            args.player.tell(kind.info);
+        }
+    }
+
+
+}
+DB.register(PlayerCharacter);
 
 
 class FightingRoom extends Basic.Room {
@@ -297,6 +300,8 @@ class FightingRoom extends Basic.Room {
 
     for (let i in MortalBeing.list) {
         let being = MortalBeing.list[i];
+        if (!being.body)
+            continue;
 
         being.timestep();
 
@@ -320,14 +325,89 @@ class FightingRoom extends Basic.Room {
 })();
 
 
+class WearableItem extends Basic.Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player && player.body)
+            verbs.push(player.body.wielding != this ? 'wear|this' : 'unwear|this');
+        return verbs;
+    }
+
+    wear(args) {
+
+    }
+
+    unwear(args) {
+
+    }
+}
+
+
+class WieldableItem extends Basic.Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player && player.body)
+            verbs.push(player.body.wielding != this ? 'wield|this' : 'unwield|this');
+        return verbs;
+    }
+
+    wield(args) {
+        if (!args.player.body)
+            args.player.tell("You must have created a character in order to wield this.");
+        else if (args.dobj.location != args.player)
+            args.player.tell("You have to be carrying this to wield it");
+        else {
+            args.player.body.wielding = this;
+            args.player.update_view('player');
+        }
+    }
+
+    unwield(args) {
+        args.player.body.wielding = null;
+        args.player.update_view('player');
+    }
+}
+
+
+class EdibleItem extends Basic.Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player)
+            verbs.push('eat|this');
+        return verbs;
+    }
+
+    eat(args) {
+
+    }
+}
+
+
+class DrinkableItem extends Basic.Item {
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player)
+            verbs.push('drink|this');
+        return verbs;
+    }
+
+    drink(args) {
+
+    }
+}
+
+
+
 module.exports = {
     //GameUtils: new GameUtils({ id: -1 }),
     GameUtils,
+    MortalBeing,
+    NonPlayerCharacter,
+    PlayerCharacter,
+    FightingRoom,
     WearableItem,
     WieldableItem,
     EdibleItem,
     DrinkableItem,
-    MortalBeing,
-    FightingRoom,
 };
 

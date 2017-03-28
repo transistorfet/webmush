@@ -95,7 +95,7 @@ class MediaDB {
 
         for (let file in this.data[id]) {
             if (!mimetype || this.data[id][file].mimetype.match(mimetype))
-                files.push({ path: '/media/'+id+'/'+file, name: this.data[id][file].name, mimetype: this.data[id][file].mimetype, size: this.data[id][file].size, editable: true });
+                files.push(Object.assign({ path: '/media/'+id+'/'+file, editable: true }, this.data[id][file]));
         }
 
         let notId = id;
@@ -104,7 +104,7 @@ class MediaDB {
                 continue;
             for (let file in this.data[id]) {
                 if (this.data[id][file].public && !mimetype || this.data[id][file].mimetype.match(mimetype))
-                    files.push({ path: '/media/'+id+'/'+file, name: this.data[id][file].name, mimetype: this.data[id][file].mimetype, size: this.data[id][file].size });
+                    files.push(Object.assign({ path: '/media/'+id+'/'+file }, this.data[id][file]));
             }
         }
         return files;
