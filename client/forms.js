@@ -47,6 +47,8 @@ class ResponseData {
 
     initialize(item) {
         this.response = { };
+        if (!item.fields)
+            return;
         item.fields.map(function (item) {
             if (item.fields)
                 this.response[item.name] = new ResponseData(item);
@@ -198,35 +200,6 @@ const CodeEditor = {
 
 
 /*
-function NewForm(form, data) {
-    return {
-        view: function (vnode) {
-            return m(Form, { form: form, value: data });
-        },
-    };
-}
-
-class Fields {
-    constructor(fields) {
-        this.fields = fields;
-        this.data = { };
-        this.fields.map(function (field) {
-            if (field.type == 'switch')
-                this.data[field.name] = new SwitchField(field.options);
-            else if (field.type == 'form')
-                this.data[field.name] = new Fields(field.form);
-            else
-                this.data[field.name] = new Field(field.value);
-        });
-    }
-}
-
-class SwitchField extends Fields {
-
-}
-
-
-
 Form.create("Editing style for ???", this.style, [
     Form.file('background', 'Background Image', '^image'),
     Form.text('backgroundPos', 'Background Position', (v) => { }),

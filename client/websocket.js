@@ -3,6 +3,9 @@
  
 const m = require('mithril');
 
+const MAX_ERRORS = 6;
+const RECONNECT_TIMEOUT = 3000;
+
 let ws = null;
 let errors = 0;
 let callbacks = {
@@ -58,10 +61,10 @@ const onClose = function (event) {
         return;
     else {
         errors += 1;
-        if (errors <= 5) {
+        if (errors <= MAX_ERRORS) {
             setTimeout(function () {
                 connect();
-            }, 2000);
+            }, RECONNECT_TIMEOUT);
         }
         else {
             alert("Error connecting to server");

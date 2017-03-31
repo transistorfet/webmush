@@ -94,5 +94,9 @@ function initTestObjects() {
 DB.loadObjects();
 //DB.saveObjects();
 
+const Realm = require('./realm');
+Realm.reinitRealmObjects(68);
+
+
 module.exports = Object.assign({ DB, Root }, Basic);
 

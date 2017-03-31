@@ -184,7 +184,7 @@ class Player extends Being {
     }
 
     prompt(id, respond, form) {
-        this.connections.forEach((conn) => { if (conn) conn.send_json({ type: 'prompt', id: id, respond: respond, form: form }); });
+        this.tell_msg({ type: 'prompt', id: id, respond: respond, form: form });
     }
 
     acceptable(obj) {
@@ -215,6 +215,14 @@ class Player extends Being {
 
     update_contents() {
         this.update_view('player');
+    }
+
+    do_verb_for(player, verb, args) {
+        if (!super.do_verb_for(player, verb, args)) {
+            if (this.body && !this.body.do_verb_for(this.body, verb, args))
+                return false;
+        }
+        return true;
     }
 
     verbs_for(player, all) {
@@ -416,6 +424,8 @@ Player.limbo = DB.reservedObjects;
 Player.lobby = DB.reservedObjects + 1;
 Player.connectedPlayers = [ ];
 Player.allPlayers = [ ];
+
+
 
 class Room extends Thing {
     constructor(options) {
@@ -746,13 +756,16 @@ class Item extends Thing {
     }
 
     give(args) {
-        if (args.prep != 'to')
-            args.player.tell("<action>You have to give something *to* someone.");
-        else if (!args.dobj || !args.iobj)
+        // TODO this test isn't needed, but without it, the user will see 'i don't understand that' instead of 'i don't see that'
+        if (!args.dobj || !args.iobj)
             args.player.tell("<action>I don't see that here.");
         else if (!args.iobj.acceptable(this))
             args.player.tell(this.format("<action>{iobj.name} doesn't want {this.title}.", args));
-        else if (this.location != args.player || args.iobj.location != args.player.location || !this.moveto(args.iobj))
+        else if (this.location != args.player)
+            args.player.tell(this.format("<action>You don't have {this.title}.", args));
+        else if (args.iobj.location != args.player.location)
+            args.player.tell(this.format("<action>{player.title} isn't here.", args));
+        else if (!this.moveto(args.iobj))
             args.player.tell(this.format("<action>You try to give {this.title} to {iobj.name} but fail somehow.", args));
         else {
             args.player.tell(this.format("<action>You give {this.title} to {iobj.name}.", args));
@@ -785,6 +798,12 @@ class UseableItem extends Item {
     }
 }
 
+
+class Container extends Item {
+
+}
+
+
  
 module.exports = {
     Thing,
@@ -794,5 +813,6 @@ module.exports = {
     Exit,
     Item,
     UseableItem,
+    Container,
 };
 

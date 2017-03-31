@@ -10,7 +10,7 @@
     "dev": "npm run build && npm start",
     "nodemon": "nodemon --ignore build --ignore data --exec npm run dev",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "wc": "wc client/*.js client/*/*.js server/*.js server/*/*.js lib/*.js lib/*/*.js"
+    "wc": "wc client/*.js client/*/*.js server/*.js server/*/*.js lib/*.js"
   },
   "author": "transistor",
   "license": "GPL-3.0",

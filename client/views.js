@@ -62,50 +62,6 @@ const EditableText = {
     },
 };
 
-
-
-/*
-const EditableField = {
-    value: '',
-    editing: false,
-
-    onupdate: function (vnode) {
-        vnode.dom.focus();
-    },
-
-    startEdit: function (value) {
-        this.editing = true;
-        this.value = value;
-    },
-
-    endEdit: function (obj, attr, value) {
-        console.log("NEW", this, arguments);
-        this.editing = false;
-        World.editAttr(obj, attr, value);
-    },
-
-    setValue: function (value) {
-        this.value = value;
-    },
-
-    keyDown: function (e) {
-        if (e.key == "Escape")
-            this.editing = false;
-    },
-
-    view: function (vnode) {
-        if (vnode.state.editing)
-            return m('textarea', Object.assign({
-                oninput: m.withAttr('value', this.setValue.bind(this)),
-                onblur: m.withAttr('value', this.endEdit.bind(this, vnode.attrs.obj, vnode.attrs.attr)),
-                onkeydown: this.keyDown.bind(this),
-            }, vnode.attrs), this.value);
-        else
-            return m('div', Object.assign({ onclick: this.startEdit.bind(this, vnode.children) }, vnode.attrs), vnode.children);
-    },
-};
-*/
-
 module.exports = {
     Box,
     EditableField,

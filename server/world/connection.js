@@ -95,12 +95,10 @@ const onMsg = function (ws, msg)
                     Root.parse_preposition(args, msg.text);
 
                 if (!args.player.do_verb_for(args.player, args.verb, args))
-                    // TODO yeah, we need to make the body a root object first...
-                    //if (args.player.body && !args.player.body.do_verb_for(args.player, args.verb, args))
-                        if (!args.player.location.do_verb_for(args.player, args.verb, args))
-                            if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
-                                if (!args.iobj || !args.iobj.do_verb_for(args.player, args.verb, args))
-                                    args.player.tell("I don't understand that.");
+                    if (!args.player.location.do_verb_for(args.player, args.verb, args))
+                        if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
+                            if (!args.iobj || !args.iobj.do_verb_for(args.player, args.verb, args))
+                                args.player.tell("I don't understand that.");
             }
         }
         catch (e) {

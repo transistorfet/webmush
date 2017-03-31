@@ -75,7 +75,10 @@
     "fullname": "Wizzy The Wizard",
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
     "icon": "/media/default/img/icons.png?12x6",
-    "_theme": "/media/default/theme/world.css"
+    "_theme": "/media/default/theme/world.css",
+    "body": {
+      "$ref": 71
+    }
   },
   {
     "$type": 3,
@@ -388,7 +391,7 @@
     "isOpen": true
   },
   {
-    "$type": 12,
+    "$type": 4,
     "id": 52,
     "name": "The Body Shop",
     "aliases": [],
@@ -401,6 +404,9 @@
         "$ref": 69
       },
       {
+        "$ref": 70
+      },
+      {
         "$ref": 34
       }
     ],
@@ -410,7 +416,10 @@
       }
     ],
     "locked": false,
-    "description": "You are standing in a strange little shop, with what seem like dead bodies hanging everywhere. A friendly shop keeper greets you, and asks if you'd like a body for adventuring in."
+    "canfollow": false,
+    "following": null,
+    "description": "You are standing in a strange little shop, with what seem like dead bodies hanging everywhere. A friendly shop keeper greets you, and asks if you'd like a body for adventuring in.",
+    "allowfighting": true
   },
   {
     "$type": 5,
@@ -660,16 +669,75 @@
     "isOpen": true
   },
   {
-    "$type": 8,
+    "$type": 9,
     "id": 68,
     "name": "RealmUtils",
     "aliases": [],
     "location": null,
     "contents": [],
-    "onLoad": "function () { DB.define('RealmUtils', this); }"
+    "kinds": [
+      {
+        "name": "Human",
+        "info": "Humans are stinky and evil",
+        "playable": true,
+        "size": "125-240",
+        "attack": 10,
+        "defense": 10,
+        "damage": 1
+      },
+      {
+        "name": "Cat",
+        "info": "Cats are cuddly and fun",
+        "playable": true,
+        "size": "30-50",
+        "attack": 10,
+        "defense": 10,
+        "damage": 2
+      },
+      {
+        "name": "Gnome",
+        "info": "The Gnome race has created some of the most remarkable\n            clockwork inventions, rivalled only by the Hephestians in their expertise\n            and craftsmanship.  However, their culture has suffered several setbacks,\n            not the least of which was the fall of the Gnome capital, Gnomevale, when\n            the Nameless One awoke on Crypt.  Nevertheless, the quick-thinking,\n            fast-talking Gnomes continue to create mechanical contraptions with the\n            hope that they will one day be able to reclaim their home.\n            Geoph leads the Gnome race.",
+        "playable": true,
+        "size": "80-140",
+        "attack": 10,
+        "defense": 10,
+        "damage": 1
+      },
+      {
+        "name": "Goat",
+        "info": "Goat are people too",
+        "playable": false,
+        "size": "80-140",
+        "attack": 10,
+        "defense": 10,
+        "damage": 1
+      }
+    ],
+    "classes": [
+      {
+        "name": "Warrior",
+        "playable": true
+      },
+      {
+        "name": "Mage",
+        "playable": true
+      },
+      {
+        "name": "Thief",
+        "playable": true
+      },
+      {
+        "name": "Bard",
+        "playable": true
+      },
+      {
+        "name": "Rogue",
+        "playable": true
+      }
+    ]
   },
   {
-    "$type": 9,
+    "$type": 12,
     "id": 69,
     "name": "A Goat",
     "aliases": [],
@@ -679,9 +747,77 @@
     "contents": [],
     "canfollow": false,
     "following": null,
+    "gameutils": {
+      "$ref": 68
+    },
+    "kind": "Goat",
+    "class": "Fighter",
+    "level": 1,
+    "xp": 0,
     "hp": 20,
     "maxhp": 20,
+    "base_stats": {
+      "str": 15,
+      "dex": 14,
+      "int": 19,
+      "wis": 5,
+      "con": 0,
+      "cha": 12,
+      "luck": 16,
+      "attack": 10,
+      "defense": 10,
+      "damage": 1
+    },
+    "stats": null,
+    "fighting": null,
+    "wimpy": 0.2,
+    "wielding": null,
+    "wearing": {}
+  },
+  {
+    "$type": 14,
+    "id": 70,
+    "name": "sword",
+    "aliases": [],
+    "location": {
+      "$ref": 52
+    },
+    "contents": []
+  },
+  {
+    "$type": 12,
+    "id": 71,
+    "name": "Wizzy's Body",
+    "aliases": [],
+    "location": null,
+    "contents": [],
+    "canfollow": false,
+    "following": null,
+    "gameutils": {
+      "$ref": 68
+    },
+    "owner": {
+      "$ref": 34
+    },
+    "kind": "Gnome",
+    "class": "Rogue",
+    "level": 1,
     "xp": 0,
+    "hp": 20,
+    "maxhp": 20,
+    "base_stats": {
+      "str": 14,
+      "dex": 13,
+      "int": 13,
+      "wis": 14,
+      "con": 14,
+      "cha": 8,
+      "luck": 14,
+      "attack": 10,
+      "defense": 10,
+      "damage": 1
+    },
+    "stats": null,
     "fighting": null,
     "wimpy": 0.2,
     "wielding": null,

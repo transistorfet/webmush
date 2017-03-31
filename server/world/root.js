@@ -22,6 +22,10 @@ class Root {
         }
     }
 
+    initialize(options) {
+        // do nothing
+    }
+
     clone(args) {
         let obj = new this.constructor({ cloning: this });      // cloning allows any constructors to choose to copy over attributes
         Object.setPrototypeOf(obj, this);
@@ -132,7 +136,7 @@ class Root {
     }
 
     /*
-    moveable_by(player) {
+    moveable(to, by) {
         return false;
     }
     */

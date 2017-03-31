@@ -130,16 +130,18 @@ const WorldViewPlayerBody = {
             return [];
 
         return (
-            m(View.Box, { class: 'body', borderless: true }, [ m('span', { class: 'tinylabel' }, "You're status is"), '',
+            m(View.Box, { class: 'body', borderless: true }, [
+                m('span', { class: 'tinylabel' }, "You're status is"), '',
+                m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.body })),
                 m('div', { class: 'column-display' }, [
                     m('table', [
                         m('tr', [
                             m('td', { class: 'tinylabel' }, "Kind:"),
-                            m('td', m('a', { onclick: World.look.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
+                            m('td', m('a', { onclick: World.info.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
                         ]),
                         m('tr', [
                             m('td', { class: 'tinylabel' }, "Class:"),
-                            m('td', m('a', { onclick: World.look.bind(World, vnode.attrs.body.class) }, vnode.attrs.body.class)),
+                            m('td', m('a', { onclick: World.info.bind(World, vnode.attrs.body.class) }, vnode.attrs.body.class)),
                         ]),
                         m('tr', [
                             m('td', { class: 'tinylabel' }, "HP:"),
@@ -154,7 +156,7 @@ const WorldViewPlayerBody = {
                         m('tr', [
                             m('td', { class: 'tinylabel' }, "Kind:"),
                             // TODO fix this link to get info on your kind, displayed in the details window maybe?  the details window might have to become more generic
-                            m('td', m('a', { onclick: World.look.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
+                            m('td', m('a', { onclick: World.info.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
                         ]),
                     ])
                 ])
@@ -208,7 +210,7 @@ const WorldVerbList = {
 
 const ObjectAttribute = {
     view: function (vnode) {
-        if (vnode.attrs.obj.editable.find((attr) => { return attr.split('|')[0] == vnode.attrs.attr; }))
+        if (vnode.attrs.obj.editable && vnode.attrs.obj.editable.find((attr) => { return attr.split('|')[0] == vnode.attrs.attr; }))
             return m(View.EditableField, Object.assign({ ondone: (value) => { World.editAttr(vnode.attrs.obj, vnode.attrs.attr, value); } }, vnode.attrs), vnode.attrs.obj[vnode.attrs.attr]);
         else
             return m('div', vnode.attrs, vnode.attrs.obj[vnode.attrs.attr]);

@@ -93,6 +93,10 @@ const World = {
         websocket.send({ type: 'do', verb: 'look', text: name });
     },
 
+    info: function (text) {
+        websocket.send({ type: 'do', verb: 'info', text: text });
+    },
+
     doVerb: function (verb, item) {
         console.log("DO", verb, item);
         websocket.send({ type: 'do', verb: verb, id: item.id });

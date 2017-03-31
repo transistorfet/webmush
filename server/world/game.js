@@ -7,9 +7,15 @@ const Basic = require('./basic');
 
 class GameUtils extends Root {
 
+    onLoad() {
+        DB.define(this.name, this);
+    }
+
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
         verbs.push('create');
+        if (player.body)
+            verbs.push(!player.body.fighting ? 'fight|object' : 'flee/stop/runaway');
         return verbs;
     }
 
@@ -27,8 +33,12 @@ class GameUtils extends Root {
             if (!this.check_form(args, 'create'))
                 return;
 
-            args.player.body = new PlayerCharacter(args.player, args.response.kind, args.response.class);
+            args.player.body = new PlayerCharacter({}, this, args.player);
+            // TODO move the actual character creation to the initialize step instead of the constructor, so loading doesn't recreated a character only to be overwritten
+            args.player.body.initialize({ kind: args.response.kind, class: args.response.class });
+            args.player.body.name = args.player.name + "'s Body";
             args.player.tell("You've created a new character!");
+            args.player.location.update_contents();
         }
     }
 
@@ -36,136 +46,310 @@ class GameUtils extends Root {
         switch (name) {
             case 'create':
                 return { label: "What kind of adventurer would you like to be?", fields: [
-                    { name: 'kind', type: 'select', required: true, options: Kinds.map((kind) => { return { value: kind.name, info: kind.info }; }) },
-                    { name: 'class', type: 'select', required: true, options: Classes.map((kind) => { return { value: kind.name, info: kind.info }; }) },
+                    { name: 'kind', type: 'select', required: true, options: this.kinds.reduce((l, v) => { if (v.playable) l.push({ value: v.name, info: v.info }); return l; }, []) },
+                    { name: 'class', type: 'select', required: true, options: this.classes.reduce((l, v) => { if (v.playable) l.push({ value: v.name, info: v.info }); return l; }, []) },
                     // TODO background/education level and type/family wealth/etc...
                 ] };
             default:
                 return null;
         }
     }
+
+    create_npc(options) {
+        let npc = new PlayerCharacter({}, this);
+        npc.initialize({ kind: options.kind ? options.kind : 'Goat', class: options.class ? options.class : 'Fighter' });
+        return npc;
+    }
+
+    /*
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (player.body)
+            verbs.push(!player.body.fighting ? 'fight|object' : 'flee/stop/runaway');
+        return verbs;
+    }
+    */
+
+    fight(args) {
+        let character = args.player.body;
+
+        if (character.fighting)
+            args.player.tell("You are already fighting something!");
+        else if (args.dobj == args.player)
+            args.player.tell("You can't fight yourself, silly.");
+        else if (!(args.dobj instanceof MortalBeing))
+            args.player.tell(this.format("You can't fight {dobj.title}.", args));
+        else if (args.player.location != args.dobj.location)
+            args.player.tell("You can't fight someone who isn't here.");
+        else if (!args.player.location.allowfighting)
+            args.player.tell("You aren't allowed to fight here.  Take it outside.");
+        else {
+            // TODO restrictions?  initiative?
+            character.fighting = args.dobj;
+            // TODO after initial attack, assuming player gets initiative, do they run away?
+            args.dobj.fighting = character;
+
+            args.player.tell(this.format("<action>You start fighting {dobj.title}.", args));
+            args.dobj.tell(this.format("<action>{player.title} start fighting you!", args));
+            args.player.location.tell_all_but([ args.player, args.dobj ], this.format("<action>{player.title} start fighting {dobj.title}!", args));
+            args.player.location.update_contents();
+        }
+    }
+
+    flee(args) {
+        let character = args.player.body;
+
+        if (!character.fighting)
+            args.player.tell("You aren't fighting anything!?");
+        else {
+            // TODO all sorts of checks
+            let opponent = character.fighting;
+            character.fighting = null;
+            // TODO check if opponent stops fighting
+            opponent.fighting = null;
+
+            args.player.tell(this.format("<action>You flee from the fight.", args));
+            opponent.tell(this.format("<action>{player.title} runs away!", args));
+            args.player.location.tell_all_but([ args.player, opponent ], args.player.format("<action>{this.title} runs away from {title}!", opponent));
+            args.player.location.update_contents();
+        }
+    }
+
+
+    static roll(dice, sides) {
+        let roll = 0;
+        for (let i = 0; i < dice; i++)
+            roll += Math.floor(Math.random() * sides + 1);
+        return roll;
+    }
+
+
 }
 
 
-const Classes = [
-    {
-        name: "Warrior",
-    },
-    {
-        name: "Mage",
-    },
-    {
-        name: "Thief",
-    },
-    {
-        name: "Bard",
-    },
-    {
-        name: "Rogue",
-    },
-];
 
-const Kinds = [
-    {
-        name: "Human",
-        info: "Humans are stinky and evil",
-        size: "125-240",
-        armor: 10,
-        damage: 1
-    },
-    {
-        name: "Cat",
-        info: "Cats are cuddly and fun",
-        size: "30-50",
-        ac: 10,
-        damage: 2
-    },
-    {
-        name: "Gnome",
-        info:
-            `The Gnome race has created some of the most remarkable
-            clockwork inventions, rivalled only by the Hephestians in their expertise
-            and craftsmanship.  However, their culture has suffered several setbacks,
-            not the least of which was the fall of the Gnome capital, Gnomevale, when
-            the Nameless One awoke on Crypt.  Nevertheless, the quick-thinking,
-            fast-talking Gnomes continue to create mechanical contraptions with the
-            hope that they will one day be able to reclaim their home.
-            Geoph leads the Gnome race.`,
-        size: "80-140",
-        ac: 10,
-        damage: 1
-    },
-];
+/*
+attack
+defense
+damage
+str
+dex
+int
+wis
+con
+cha
+luck
+
+
+Effect:
+ attack: +1, str: +1
+
+add all effects to base stats to get current stats
+
+
+*/
+
+
 
 
 class MortalBeing extends Basic.Being {
-    constructor(options, kind, cls) {
+    constructor(options, gameutils) {
         super(options);
         MortalBeing.list.push(this);
-        this.kind = kind;
-        this.class = cls;
+        this.gameutils = gameutils;
+    }
+
+    initialize(options) {
+        // TODO this is for when you create a new object and want to specify how to initialize it;
+        this.kind = options.kind;
+        this.class = options.class;
+
+        this.level = 1;
+        this.xp = 0;
         this.hp = 20;
         this.maxhp = 20;
-        this.xp = 0;
+        this.base_stats = this.make_stats(this.kind, this.class);
+
         this.fighting = null;
         this.wimpy = 0.2;
         this.wielding = null;
         this.wearing = { };
+        this.coins = 0;
     }
 
-    timestep() {
-        // TODO do... things...
-
-        if (this.hp < this.maxhp) {
-            this.hp += 1;
-            this.owner.update_view('player');
-        }
-    }
-
-    attack(opponent) {
-        // TODO handle attack phase for this character/mortalbeing??
-    }
-}
-MortalBeing.list = [ ];
-
-
-class NonPlayerCharacter extends MortalBeing {
-    constructor(options) {
-        super(options);
-        this.body = { };
+    moveable(to, by) {
+        // TODO can't leave room when fighting
     }
 
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
-        if (player.body && this.location instanceof FightingRoom)
+        if (player.body && player.location.allowfighting)
             verbs.push(player.body.fighting != this ? 'fight|this' : 'flee/stop/runaway');
         return verbs;
     }
 
     fight(args) {
-        this.location.fight(args);
+        //this.location.fight(args);
+        this.gameutils.fight(args);
     }
 
     flee(args) {
-        this.location.flee(args);
+        //this.location.flee(args);
+        this.gameutils.flee(args);
+    }
+
+
+    timestep() {
+        // TODO do... things...
+
+        if (this.hp < this.maxhp) {
+            this.hp += 0.5;
+            return true;
+        }
+    }
+
+    make_stats(kindname, classname) {
+        let kind = DB.Named.RealmUtils.kinds.find((kind) => { return kind.name == kindname });
+        return {
+            str: GameUtils.roll(3, 6),
+            dex: GameUtils.roll(3, 6),
+            int: GameUtils.roll(3, 6),
+            wis: GameUtils.roll(3, 6),
+            con: GameUtils.roll(3, 6),
+            cha: GameUtils.roll(3, 6),
+            luck: GameUtils.roll(3, 6),
+
+            attack: kind.attack,
+            defense: kind.defense,
+            damage: kind.damage,
+        };
+    }
+
+    update_stats() {
+        this.stats = Object.assign({}, this.base_stats, { $nosave: true });
+    }
+
+    roll_initiative() {
+        let initRoll = GameUtils.roll(1, 20);
+        return initRoll + (this.stats.dex - 10) * 0.1;
+    }
+
+    /*
+    attack() {
+        return this.stats.attack + this.stats.str * 0.2;
+    }
+
+    defense() {
+        return this.stats.defense + this.stats.dex * 0.2;
+    }
+
+    damage() {
+        return this.stats.damage;
+    }
+    */
+
+    calc_damage(opponent) {
+        let attackRoll = GameUtils.roll(1, 20);
+        let attackMod = /*this.stats.attack + */ (this.stats.str - 10) * 0.2;
+        let defenseMod = opponent.stats.defense;
+        console.log("To Hit", attackRoll, attackMod, defenseMod);
+        if (attackRoll + attackMod > defenseMod) {
+            let damageRoll = Math.random();
+            return Math.floor(damageRoll + this.stats.damage);
+        }
+        return 0;
+    }
+
+    attack_opponent(opponent) {
+        let damage = this.calc_damage(opponent);
+        console.log("Damage", damage);
+        if (damage <= 0) {
+            this.tell(this.format("<attack>You MISSED {title}!?", opponent));
+            opponent.tell(opponent.format("<defense>{title} MISSED you!", this));
+        }
+        else {
+            opponent.hp -= damage;
+            if (opponent.hp > 0) {
+                this.tell(this.format("<attack>You hit {title} with your fist", opponent));
+                opponent.tell(opponent.format("<defense>{title} hits you with their fist!", this));
+            }
+            else {
+                this.tell(this.format("<attack>You KILLED {title}!!! How could you!?", opponent));
+                opponent.tell(opponent.format("<defense>{title} has killed you... you are now dead", this));
+            }
+        }
+    }
+}
+MortalBeing.list = [ ];
+
+
+(function TimeCycle() {
+    let start = Date.now();
+
+    // TODO could you call a timestep function on the player character, as well as the room, and monsters, etc; so they can move
+
+    let fightingPlayers = [ ];
+    for (let i in MortalBeing.list) {
+        let being = MortalBeing.list[i];
+        if (!being)
+            continue;
+
+        being.timestep();
+
+        if (being.fighting) {
+            being.update_stats();
+            fightingPlayers.push([ being, being.roll_initiative() ]);
+        }
+    }
+
+    // Determine initiative order
+    fightingPlayers.sort((a, b) => { return a[1] - b[1] });
+
+    for (let i in fightingPlayers) {
+        let character = fightingPlayers[i][0];
+        let opponent = character.fighting;
+
+        // TODO do actual fight thing
+        character.attack_opponent(opponent);
+
+        //player.tell(player.format("<attack>You hit {fighting.title} with your fist", player.body));
+        //opponent.tell(opponent.format("<defense>{title} hits you with their fist!", player));
+    }
+
+    setTimeout(TimeCycle, Math.max(8000 - (Date.now() - start), 3000));
+})();
+
+
+
+class NonPlayerCharacter extends MortalBeing {
+    constructor(options, gameutils) {
+        super(options, gameutils);
     }
 
     timestep() {
-        super.timestep();
+        return super.timestep();
         // TODO move around, attack maybe
     }
 }
 
 
-// TODO what if you made this inherit from MortalBeing, and put the stats stuff there; character would be an owned mortalbeing that can be modified
 class PlayerCharacter extends MortalBeing {
-    constructor(options, kind, cls, owner) {
-        super(options, kind, cls);
-        if (!owner || !kind || !cls)
-            return;
+    constructor(options, gameutils, owner) {
+        super(options, gameutils);
         this.owner = owner;
     }
 
+    tell(text) {
+        if (this.owner)
+            this.owner.tell(text);
+    }
+
+    tell_msg(msg) {
+        if (this.owner)
+            this.owner.tell_msg(msg);
+    }
+
+    // TODO move to MortalBeing
     get_view(player) {
         let view = super.get_view(player);
         view.kind = this.kind;
@@ -178,6 +362,7 @@ class PlayerCharacter extends MortalBeing {
     }
 
     get_template(player) {
+        // TODO are there dangers of this?  maybe move it to MortalBeing?
         if (player != this && player != this.owner) {
             return function (context) {
                 return m('table', { class: 'body' }, 'hey');
@@ -206,123 +391,31 @@ class PlayerCharacter extends MortalBeing {
 
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
-        if (this == player || this.owner == player) {
-
-        }
         if (all)
             verbs.push('help/info');
         return verbs;
     }
 
     help(args) {
-        //let kind = DB.Named.RealmUtils.
-        let kind = Kinds.find((kind) => { return kind.name == args.text; });
-        if (kind) {
-            args.player.tell("Kind: " + kind.name);
-            args.player.tell(kind.info);
+        let text = args.text.trim().toLowerCase();
+
+        let kind = this.gameutils.kinds.find((kind) => { return kind.name.toLowerCase() == text; });
+        if (kind)
+            args.player.tell_msg({ type: 'update', details: { title: "Kind: " + kind.name, description: kind.info } });
+
+        let cls = this.gameutils.kinds.find((cls) => { return cls.name.toLowerCase() == text; });
+        if (cls)
+            args.player.tell_msg({ type: 'update', details: { title: "Class: " + cls.name, description: cls.info } });
+    }
+
+    timestep() {
+        if (super.timestep() && this.owner) {
+            this.owner.update_view('body');
+            return true;
         }
-    }
-
-
-}
-DB.register(PlayerCharacter);
-
-
-class FightingRoom extends Basic.Room {
-    ejectable(obj) {
-        return !obj.body || !obj.body.fighting;
-    }
-
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (player.body)
-            verbs.push(!player.body.fighting ? 'fight|object' : 'flee/stop/runaway');
-        return verbs;
-    }
-
-    fight(args) {
-        if (args.player.body.fighting)
-            args.player.tell("You are already fighting something!");
-        else if (args.dobj == args.player)
-            args.player.tell("You can't fight yourself, silly.");
-        else if (!(args.dobj instanceof MortalBeing) || !args.dobj.body)
-            args.player.tell(this.format("You can't fight {dobj.title}.", args));
-        else if (args.player.location != args.dobj.location)
-            args.player.tell("You can't fight someone who isn't here.");
-        else {
-            // TODO restrictions?  initiative?
-            args.player.body.fighting = args.dobj;
-            // TODO after initial attack, assuming player gets initiative, do they run away?
-            args.dobj.body.fighting = args.player;
-
-            args.player.tell(this.format("<action>You start fighting {dobj.title}.", args));
-            args.dobj.tell(this.format("<action>{player.title} start fighting you!", args));
-            args.player.location.tell_all_but([ args.player, args.dobj ], this.format("<action>{player.title} start fighting {dobj.title}!", args));
-            args.player.location.update_contents();
-        }
-    }
-
-    flee(args) {
-        if (!args.player.body.fighting)
-            args.player.tell("You aren't fighting anything!?");
-        else {
-            // TODO all sorts of checks
-            let opponent = args.player.body.fighting;
-            args.player.body.fighting = null;
-            // TODO check if opponent stops fighting
-            opponent.body.fighting = null;
-
-            args.player.tell(this.format("<action>You flee from the fight.", args));
-            opponent.tell(this.format("<action>{player.title} runs away!", args));
-            args.player.location.tell_all_but([ args.player, opponent ], args.player.format("<action>{this.title} runs away from {title}!", opponent));
-            args.player.location.update_contents();
-        }
+        return false;
     }
 }
-
-
-(function TimeCycle() {
-    let start = Date.now();
-
-    // TODO could you call a timestep function on the player character, as well as the room, and monsters, etc; so they can move
-
-    let fightingPlayers = [ ];
-    for (let i in Basic.Player.connectedPlayers) {
-        let player = Basic.Player.connectedPlayers[i];
-        if (!player.body)
-            continue;
-
-        player.body.timestep();
-
-        if (player.body.fighting)
-            fightingPlayers.push(player);
-    }
-
-    for (let i in MortalBeing.list) {
-        let being = MortalBeing.list[i];
-        if (!being.body)
-            continue;
-
-        being.timestep();
-
-        if (being.body.fighting)
-            fightingPlayers.push(being);
-    }
-
-
-    for (let i in fightingPlayers) {
-        let player = fightingPlayers[i];
-        let opponent = player.body.fighting;
-
-        // TODO check for iniative?  maybe you can do that by reordering the list
-        // TODO do actual fight thing
-
-        player.tell(player.format("<attack>You hit {fighting.title} with your fist", player.body));
-        opponent.tell(opponent.format("<defense>{title} hits you with their fist!", player));
-    }
-
-    setTimeout(TimeCycle, Math.max(8000 - (Date.now() - start), 3000));
-})();
 
 
 class WearableItem extends Basic.Item {
@@ -358,13 +451,13 @@ class WieldableItem extends Basic.Item {
             args.player.tell("You have to be carrying this to wield it");
         else {
             args.player.body.wielding = this;
-            args.player.update_view('player');
+            args.player.update_view('player,body');
         }
     }
 
     unwield(args) {
         args.player.body.wielding = null;
-        args.player.update_view('player');
+        args.player.update_view('player,body');
     }
 }
 
@@ -397,17 +490,20 @@ class DrinkableItem extends Basic.Item {
 }
 
 
+class VendingMachine extends Basic.Thing {
+    
+}
+
 
 module.exports = {
-    //GameUtils: new GameUtils({ id: -1 }),
     GameUtils,
     MortalBeing,
     NonPlayerCharacter,
     PlayerCharacter,
-    FightingRoom,
     WearableItem,
     WieldableItem,
     EdibleItem,
     DrinkableItem,
+    VendingMachine,
 };
 
