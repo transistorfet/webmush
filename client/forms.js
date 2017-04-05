@@ -4,6 +4,7 @@
 const m = require('mithril');
 
 const Media = require('./media/components');
+const FileInfo = require('./media/model');
 
 let _seq = 0;
 
@@ -105,7 +106,7 @@ const FieldList = {
         return m('table', { class: 'form-table' }, vnode.attrs.fields.map(function (item) {
             let info = FieldInfo(item, vnode.attrs.response);
             return m('tr', [
-                m('td', m('label', item.label ? item.label : item.name.capitalize())),
+                m('td', m('label', typeof item.label == 'string' ? item.label : item.name.capitalize())),
                 m('td', !info ? { colspan: 2 } : undefined, Field.call(this, item, vnode.attrs.response)),
                 info ? m('td', m('div', { class: 'option-info' }, info)) : '',
             ]);
@@ -132,10 +133,13 @@ const Field = function (item, data) {
         return m(CodeEditor, { name: item.name, oninput: m.withAttr('value', data.setItem.bind(data, item.name)), value: data.getItem(item.name) });
     else if (item.type == 'select')
         return FieldSelect(item, data);
+    else if (item.type == 'checkbox')
+        return FieldCheckbox(item, data);
     else if (item.type == 'textarea')
         return m('textarea', { name: item.name, oninput: m.withAttr('value', data.setItem.bind(data, item.name)), value: data.getItem(item.name) });
     else
-        return m('input', { type: item.type, name: item.name, oninput: m.withAttr('value', data.setItem.bind(data, item.name)), value: data.getItem(item.name) });
+        //return m('input', { type: item.type, name: item.name, oninput: m.withAttr('value', data.setItem.bind(data, item.name)), value: data.getItem(item.name) });
+        return FieldInput(item, data);
 };
 
 const FieldSelect = function (item, data) {
@@ -149,11 +153,39 @@ const FieldSelect = function (item, data) {
     }));
 };
 
+const FieldCheckbox = function (item, data) {
+    return m('input', { type: 'checkbox', name: item.name, onchange: m.withAttr('checked', data.setItem.bind(data, item.name)), checked: data.getItem(item.name) ? true : undefined, value: 1 });
+};
 
+
+
+const FieldInput = function (item, data) {
+    return [
+        m('input', { type: item.type, name: item.name, oninput: m.withAttr('value', data.setItem.bind(data, item.name)), value: data.getItem(item.name), list: item.name + '-suggestions' }),
+        item.suggestions ? Suggestions(item.name + '-suggestions', item.suggestions) : '',
+    ];
+};
+
+const Suggestions = function (id, list) {
+    if (Array.isArray(list)) {
+        return m('datalist', { id: id }, list.map(function (item) {
+            return m('option', { value: item });
+        }));
+    }
+    else {
+        let files = FileInfo.list(list);
+        if (!files)
+            return '';
+        else {
+            return m('datalist', { id: id }, files.map(function (item) {
+                return m('option', { value: item.path });
+            }));
+        }
+    }
+};
 
 const FieldSwitch = {
     oninit: function (vnode) {
-        console.log("NEW SWITCH", vnode.attrs.switch);
         this.select(vnode, vnode.attrs.switch.value || vnode.attrs.switch.options[0].name);
     },
 
@@ -166,11 +198,10 @@ const FieldSwitch = {
     },
 
     view: function (vnode) {
-        console.log("DATA", vnode.attrs.response.getItem(vnode.attrs.switch.name));
         return [
             m('div', { class: 'form-switch' }, vnode.attrs.switch.options.map(function (item) {
                 return [
-                    m('input', { type: 'radio', name: vnode.attrs.switch.name, onchange: m.withAttr('value', this.select.bind(this, vnode)), value: item.name, checked: this.selected == item.name }),
+                    m('input', { type: 'radio', name: vnode.attrs.switch.name, onchange: m.withAttr('value', this.select.bind(this, vnode)), value: item.name, checked: this.selected.name == item.name }),
                     m('label', item.label),
                 ];
             }.bind(this))),
@@ -196,6 +227,9 @@ const CodeEditor = {
         return m('textarea', Object.assign(vnode.attrs, { onkeydown: this.keydown.bind(this, vnode) }));
     },
 };
+
+
+
 
 
 

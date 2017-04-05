@@ -100,18 +100,23 @@ class Root {
         return null;
     }
 
-    moveto(location) {
+    moveto(location, by) {
         if (!location || this.location == location)
             return false;
+        if (!by)
+            console.log("ERRR", "Oh no! nobody moved a thing");
 
         for (let where = location; where; where = where.location) {
             if (where == this)
                 return false;
         }
 
-        if (this.location && !this.location.ejectable(this))
+        // TODO maybe if moveto doesn't have a by, it moves without checking these?
+        if (this.location && !this.location.ejectable(this, by))
             return false;
-        if (location && !location.acceptable(this))
+        if (!this.moveable(location, by))
+            return false;
+        if (location && !location.acceptable(this, by))
             return false;
 
         let oldLocation = this.location;
@@ -127,25 +132,23 @@ class Root {
     }
 
 
-    acceptable(obj) {
+    acceptable(obj, by) {
         return false;
     }
 
-    ejectable(obj) {
+    ejectable(obj, by) {
         return true;
     }
 
-    /*
     moveable(to, by) {
-        return false;
+        return true;
     }
-    */
 
     tell(text) {
         // do nothing
     }
 
-    get title() { return this.name.capitalize(); }
+    get title() { if (typeof this.name === 'string') return this.name.capitalize(); return ''; }
     set title(t) { this.name = t; }
 
     get_view(player) {
@@ -183,21 +186,24 @@ class Root {
 
     do_verb_for(player, verb, args) {
         //'give/put|this to/in object'
-        let signature = this.verbs_for(player, true).find((v) => { return v.split('|').shift().split('/').indexOf(verb) != -1; });
-        if (!signature)
+        let signatures = this.verbs_for(player, true).filter((v) => { return v.split('|').shift().split('/').indexOf(verb) != -1; });
+        if (!signatures)
             return false;
 
-        let parts = signature.split('|');
-        let funcname = parts[0].split('/', 1)[0];
+        for (let i = 0; i < signatures.length; i++) {
+            let parts = signatures[i].split('|');
+            let funcname = parts[0].split('/', 1)[0];
 
-        if (parts[1]) {
-            if (parts[1] == 'prompt' && !this.check_form(args, funcname))
-                return true;
-            else if (!this.check_args(args, parts[1]))
-                return false;
+            if (parts[1]) {
+                if (parts[1] == 'prompt' && !this.check_form(args, funcname))
+                    return true;
+                else if (!this.check_args(args, parts[1]))
+                    continue;
+            }
+            this[funcname].apply(this, [args]);
+            return true;
         }
-        this[funcname].apply(this, [args]);
-        return true;
+        return false;
     }
 
     check_args(args, signature) {
@@ -262,7 +268,7 @@ class Root {
                     errors.push(form.fields[i].label + " must be a string.");
             }
             else if (form.fields[i].type == 'file') {
-                if (typeof value != 'string' || !value.match(/^(\/\w+)+/))
+                if (typeof value != 'string' || (value && !value.match(/^(\/\w+)+/)))
                     errors.push(form.fields[i].label + " is an invalid filename.");
             }
             if (form.fields[i].validate && !form.fields[i].validate(value))

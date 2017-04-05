@@ -88,7 +88,7 @@ const onMsg = function (ws, msg)
         try {
             if (msg.id) {
                 if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
-                    args.player.tell("I don't understand that.");
+                    args.player.tell("I don't know how to do that.");
             }
             else {
                 if (msg.text)
@@ -98,7 +98,7 @@ const onMsg = function (ws, msg)
                     if (!args.player.location.do_verb_for(args.player, args.verb, args))
                         if (!args.dobj || !args.dobj.do_verb_for(args.player, args.verb, args))
                             if (!args.iobj || !args.iobj.do_verb_for(args.player, args.verb, args))
-                                args.player.tell("I don't understand that.");
+                                args.player.tell("I don't know how to do that.");
             }
         }
         catch (e) {

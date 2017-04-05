@@ -13,6 +13,15 @@ const FileInfo = {
         return FileInfo.files.find((file) => { return file.path == path; });
     },
 
+    list: function (filter) {
+        if (filter) {
+            filter = new RegExp(filter);
+            return FileInfo.files.filter((file) => { return file.mimetype.match(filter); });
+        }
+        else
+            return FileInfo.files;
+    },
+
     load: function (done, reload) {
         if (!reload && FileInfo.files.length > 0)
             return;

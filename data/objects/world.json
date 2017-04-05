@@ -56,13 +56,14 @@
         "$ref": 40
       },
       {
+        "$ref": 71
+      },
+      {
         "$ref": 39
       }
     ],
     "canfollow": true,
-    "following": {
-      "$ref": 35
-    },
+    "following": null,
     "connections": [
       null
     ],
@@ -71,13 +72,15 @@
     },
     "isWizard": true,
     "position": "standing",
+    "prefs": {
+      "autoplay": true
+    },
     "description": "A short person with a long white beard and a pointy blue hat.",
     "fullname": "Wizzy The Wizard",
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
     "icon": "/media/default/img/icons.png?12x6",
-    "_theme": "/media/default/theme/world.css",
     "body": {
-      "$ref": 71
+      "$ref": 72
     }
   },
   {
@@ -93,10 +96,13 @@
     "following": null,
     "connections": [],
     "saved_location": {
-      "$ref": 49
+      "$ref": 52
     },
     "isWizard": false,
-    "position": "sitting",
+    "position": "standing",
+    "prefs": {
+      "autoplay": true
+    },
     "description": "An anthropormorphic worm with a green hat, and a single big brown boot.",
     "fullname": "Lowely Worm",
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu"
@@ -275,6 +281,9 @@
     },
     "isWizard": false,
     "position": "standing",
+    "prefs": {
+      "autoplay": true
+    },
     "description": "You aren't sure what it is.",
     "fullname": "yoy",
     "password": "$2a$10$8g2urm7YjH.OT3nY7/ZL5uRWarGYsVJAViS8W1L5v3EF7fugyhljK",
@@ -356,7 +365,16 @@
     ],
     "locked": false,
     "description": "You are standing on the edge of a green field with rolling hills in the distance.  A path leads into The Realm, with a set of turnstiles blocking the way.  A vendor's booth stands to the east with a sign saying \"The Body Shop\".",
-    "style": {}
+    "style": {
+      "background": "",
+      "backgroundPos": "",
+      "font": "",
+      "box": "",
+      "title": "",
+      "description": ""
+    },
+    "audio": "",
+    "audio_loop": false
   },
   {
     "$type": 5,
@@ -419,7 +437,16 @@
     "canfollow": false,
     "following": null,
     "description": "You are standing in a strange little shop, with what seem like dead bodies hanging everywhere. A friendly shop keeper greets you, and asks if you'd like a body for adventuring in.",
-    "allowfighting": true
+    "allowfighting": true,
+    "style": {
+      "background": "",
+      "backgroundPos": "",
+      "font": "",
+      "box": "",
+      "title": "",
+      "description": ""
+    },
+    "audio": ""
   },
   {
     "$type": 5,
@@ -681,36 +708,51 @@
         "info": "Humans are stinky and evil",
         "playable": true,
         "size": "125-240",
-        "attack": 10,
+        "attack": 0,
         "defense": 10,
-        "damage": 1
+        "damage": [
+          1,
+          8
+        ]
       },
       {
         "name": "Cat",
         "info": "Cats are cuddly and fun",
         "playable": true,
         "size": "30-50",
-        "attack": 10,
+        "attack": 0,
         "defense": 10,
-        "damage": 2
+        "damage": [
+          1,
+          8,
+          2
+        ]
       },
       {
         "name": "Gnome",
         "info": "The Gnome race has created some of the most remarkable\n            clockwork inventions, rivalled only by the Hephestians in their expertise\n            and craftsmanship.  However, their culture has suffered several setbacks,\n            not the least of which was the fall of the Gnome capital, Gnomevale, when\n            the Nameless One awoke on Crypt.  Nevertheless, the quick-thinking,\n            fast-talking Gnomes continue to create mechanical contraptions with the\n            hope that they will one day be able to reclaim their home.\n            Geoph leads the Gnome race.",
         "playable": true,
         "size": "80-140",
-        "attack": 10,
+        "attack": 0,
         "defense": 10,
-        "damage": 1
+        "damage": [
+          1,
+          4,
+          0
+        ]
       },
       {
         "name": "Goat",
         "info": "Goat are people too",
         "playable": false,
         "size": "80-140",
-        "attack": 10,
+        "attack": 0,
         "defense": 10,
-        "damage": 1
+        "damage": [
+          1,
+          4,
+          0
+        ]
       }
     ],
     "classes": [
@@ -737,7 +779,7 @@
     ]
   },
   {
-    "$type": 12,
+    "$type": 11,
     "id": 69,
     "name": "A Goat",
     "aliases": [],
@@ -750,6 +792,8 @@
     "gameutils": {
       "$ref": 68
     },
+    "state": "dead",
+    "stance": "standing",
     "kind": "Goat",
     "class": "Fighter",
     "level": 1,
@@ -766,7 +810,11 @@
       "luck": 16,
       "attack": 10,
       "defense": 10,
-      "damage": 1
+      "damage": [
+        1,
+        4,
+        0
+      ]
     },
     "stats": null,
     "fighting": null,
@@ -782,11 +830,29 @@
     "location": {
       "$ref": 52
     },
-    "contents": []
+    "contents": [],
+    "damage": [
+      1,
+      8,
+      1
+    ]
+  },
+  {
+    "$type": 8,
+    "id": 71,
+    "name": "magic bag",
+    "aliases": [
+      "bag"
+    ],
+    "location": {
+      "$ref": 34
+    },
+    "contents": [],
+    "description": "It's a magical bag that can hold anything!"
   },
   {
     "$type": 12,
-    "id": 71,
+    "id": 72,
     "name": "Wizzy's Body",
     "aliases": [],
     "location": null,
@@ -799,10 +865,12 @@
     "owner": {
       "$ref": 34
     },
+    "state": "alive",
+    "stance": "standing",
     "kind": "Gnome",
     "class": "Rogue",
     "level": 1,
-    "xp": 0,
+    "xp": 183,
     "hp": 20,
     "maxhp": 20,
     "base_stats": {
@@ -815,12 +883,18 @@
       "luck": 14,
       "attack": 10,
       "defense": 10,
-      "damage": 1
+      "damage": [
+        1,
+        4,
+        0
+      ]
     },
     "stats": null,
     "fighting": null,
     "wimpy": 0.2,
-    "wielding": null,
+    "wielding": {
+      "$ref": 70
+    },
     "wearing": {}
   }
 ]

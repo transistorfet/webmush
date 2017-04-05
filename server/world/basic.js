@@ -50,6 +50,7 @@ class Thing extends Root {
     /*
     icon: new Verb({
         pattern: 'icon|prompt',
+        obvious: true,      // put a link on the display
         perms: (player) => { return this == player || player.isWizard },
         form: Form.create('Set Icon', [ Form.File('icon', '^image', this.icon ? this.icon : '') ]),
         do: function (args) {
@@ -76,7 +77,11 @@ class Being extends Thing {
         this.fullname = t;
     }
 
-    acceptable(obj) {
+    get brief() {
+        return this.format("{this.title} is here");
+    }
+
+    acceptable(obj, by) {
         return false;
     }
 
@@ -138,6 +143,9 @@ class Player extends Being {
         this.isWizard = false;
         this.position = 'standing';
         this.canfollow = true;
+        this.prefs = {
+            autoplay: true,
+        };
     }
 
     onLoad() {
@@ -173,6 +181,24 @@ class Player extends Being {
         }
     }
 
+    get brief() {
+        if (this.body)
+            return this.body.brief;
+        return super.brief;
+    }
+
+
+    acceptable(obj, by) {
+        return !(obj instanceof Being);
+    }
+
+    moveable(to, by) {
+        if (this.body)
+            return this.body.moveable(to, by);
+        return true;
+    }
+
+
     tell(text) {
         if (!text)
             return;
@@ -187,13 +213,9 @@ class Player extends Being {
         this.tell_msg({ type: 'prompt', id: id, respond: respond, form: form });
     }
 
-    acceptable(obj) {
-        return !(obj instanceof Being);
-    }
-
     get_view(player) {
         let view = super.get_view(player);
-        view.brief = this.format("{this.title} is {this.position} here.");
+        view.brief = this.brief;
         if (player == this) {
             view.contents = this.contents.map(function (item) {
                 return item.get_view(player);
@@ -219,7 +241,7 @@ class Player extends Being {
 
     do_verb_for(player, verb, args) {
         if (!super.do_verb_for(player, verb, args)) {
-            if (this.body && !this.body.do_verb_for(this.body, verb, args))
+            if (!this.body || !this.body.do_verb_for(this.body, verb, args))
                 return false;
         }
         return true;
@@ -227,14 +249,8 @@ class Player extends Being {
 
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
-        if (this == player) {
-            if (this.position != 'standing' || all)
-                verbs.push('stand');
-            if (this.position != 'sitting' || all)
-                verbs.push('sit');
-
+        if (this == player)
             verbs.push('profile|prompt', 'theme|prompt');
-        }
         if (all && player.isWizard)
             verbs.push('teleport', 'examine|object', 'getattr', 'setattr', 'editverb');
         return verbs;
@@ -242,28 +258,9 @@ class Player extends Being {
 
     get_prefs() {
         return {
-            audio: false,
-            theme: Style.getCSS(this._theme ? this._theme : '/media/default/theme/world.css', 'body'),
+            autoplay: this.prefs.autoplay,
+            theme: Style.getCSS(this.prefs.theme ? this.prefs.theme : '/media/default/theme/world.css', 'body'),
         };
-    }
-
-
-    sit(args) {
-        this.position = 'sitting';
-
-        args.player.tell("<action>You sit down on the ground.");
-        args.player.location.tell_all_but(args.player, this.format("<action>{player.name} sits down on the ground.", args));
-        this.update_view();
-        this.location.update_contents();
-    }
-
-    stand(args) {
-        this.position = 'standing';
-
-        args.player.tell("<action>You stand up.");
-        args.player.location.tell_all_but(args.player, this.format("<action>{player.name} stands up.", args));
-        this.update_view();
-        this.location.update_contents();
     }
 
 
@@ -275,7 +272,7 @@ class Player extends Being {
             args.player.tell("You can only teleport into a room object");
         else {
             let oldwhere = this.location;
-            if (this.moveto(args.dobj)) {
+            if (this.moveto(args.dobj, args.player)) {
                 oldwhere.tell_all_but(args.player, this.format("<action>{this.title} disappears in a flash of smoke.", args));
                 this.location.tell_all_but(args.player, this.format("<action>{this.title} appears in a flash of smoke.", args));
                 args.player.tell(this.format("<action>You teleport to {this.location.title}", args));
@@ -362,15 +359,16 @@ class Player extends Being {
         if (args.response.aliases)
             this.aliases = args.response.aliases.split(/\s*,\s*/);
         this.icon = args.response.icon;
+        this.prefs.autoplay = args.response.autoplay;
         this.update_contents();
     }
 
     theme(args) {
         console.log("THEME", args.response);
         if (args.response.theme_switch == 'cssfile')
-            this._theme = args.response.theme.cssfile;
+            this.prefs.theme = args.response.theme.cssfile;
         else
-            this._theme = args.response.theme;
+            this.prefs.theme = args.response.theme;
         args.player.tell_msg({ type: 'prefs', prefs: args.player.get_prefs() });
     }
 
@@ -381,19 +379,20 @@ class Player extends Being {
                     { name: 'icon', label: 'Avatar', type: 'file', filter: '^image', value: this.icon ? this.icon : '' },
                     { name: 'aliases', label: 'Aliases', type: 'text', value: this.aliases ? this.aliases.join(', ') : '' },
                     //{ name: 'email', label: 'Email Address', type: 'text', value: this.email },
+                    { name: 'autoplay', label: 'Audio Autoplay', type: 'checkbox', value: this.prefs.autoplay },
                 ] };
             case 'theme':
                 return { label: "Editing Site Theme", fields: [
-                    { name: 'theme', type: 'switch', value: typeof this._theme == 'string' ? 'cssfile' : 'options', options: [
+                    { name: 'theme', type: 'switch', value: typeof this.prefs.theme == 'string' ? 'cssfile' : 'options', options: [
                         { name: 'cssfile', type: 'fields', label: 'CSS File', fields: [
-                            { name: 'cssfile', type: 'file', filter: 'text/css', value: typeof this._theme == 'string' ? this._theme : '' },
+                            { name: 'cssfile', type: 'file', filter: 'text/css', value: typeof this.prefs.theme == 'string' ? this.prefs.theme : '' },
                         ] },
                         { name: 'options', type: 'fields', label: 'Options', fields: [
-                            { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this._theme ? this._theme.background : '' },
-                            { name: 'font', label: 'Font', type: 'text', value: this._theme ? this._theme.font : '' },
-                            { name: 'box', label: 'Box CSS', type: 'text', value: this._theme ? this._theme.box : '' },
-                            { name: 'title', label: 'Title CSS', type: 'text', value: this._theme ? this._theme.title : '' },
-                            { name: 'description', label: 'Description CSS', type: 'text', value: this._theme ? this._theme.description : '' },
+                            { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this.prefs.theme ? this.prefs.theme.background : '' },
+                            { name: 'font', label: 'Font', type: 'text', value: this.prefs.theme ? this.prefs.theme.font : '' },
+                            { name: 'box', label: 'Box CSS', type: 'text', value: this.prefs.theme ? this.prefs.theme.box : '' },
+                            { name: 'title', label: 'Title CSS', type: 'text', value: this.prefs.theme ? this.prefs.theme.title : '' },
+                            { name: 'description', label: 'Description CSS', type: 'text', value: this.prefs.theme ? this.prefs.theme.description : '' },
                         ] },
                     ] },
                 ] };
@@ -445,16 +444,22 @@ class Room extends Thing {
         });
     }
 
-    acceptable(obj) {
+    acceptable(obj, by) {
         return !this.locked;
+    }
+
+    moveable(to, by) {
+        return false;
     }
 
     get_view(player) {
         let view = super.get_view(player);
         if (this.style)
             view.style = Style.getCSS(this.style, '.viewbox.location');
-        if (this.audio)
+        if (this.audio) {
             view.audio = this.audio;
+            view.audio_loop = this.audio_loop ? true : false;
+        }
         view.contents = this.contents.filter((obj) => { return obj != player }).map(function (item) {
             return item.get_view(player);
         });
@@ -597,6 +602,10 @@ class Room extends Thing {
     customize(args) {
         if (!this.check_form(args, 'customize'))
             return;
+        this.audio = args.response.audio;
+        this.audio_loop = args.response.audio_loop;
+        delete args.response.audio;
+        delete args.response.audio_loop;
         this.style = args.response;
         this.update_contents();
     }
@@ -608,9 +617,9 @@ class Room extends Thing {
                     this.style = { };
                 return { label: "Customize style for \"" + this.title + "\"", fields: [
                     { name: 'background', label: 'Background Image', type: 'file', filter: '^image', value: this.style.background ? this.style.background : '' },
-                    { name: 'backgroundPos', label: 'Background Position', type: 'text', value: this.style.backgroundPos ? this.style.backgroundPos : '', validate: (v) => { return !v || v.match(/^(left|center|right|\d{1,3}\%)(\s+(top|center|bottom|\d{1,3}\%))?$/); } },
+                    { name: 'backgroundPos', label: 'Background Position', type: 'text', value: this.style.backgroundPos ? this.style.backgroundPos : '', validate: (v) => { return !v || v.match(/^(left|center|right|\d{1,3}\%)(\s+(top|center|bottom|\d{1,3}\%))?$/); }, suggestions: [ 'center center', 'left top', 'right bottom', '25% 25%' ] },
 
-                    { name: 'font', label: 'Font', type: 'text', value: this.style.font ? this.style.font : '' },
+                    { name: 'font', label: 'Font', type: 'text', value: this.style.font ? this.style.font : '', suggestions: '^application/x-font-' },
                     //{ name: 'font', type: 'switch', value: this.style && typeof this.style.font == 'string' && this.style.font[0] == '/' ? 'file' : 'text', options: [
                     //    { name: 'file', label: 'Font', type: 'file', value: this.style ? this.style.font : '' },
                     //    { name: 'text', label: 'Font Name', type: 'text', value: this.style ? this.style.font : '' },
@@ -618,6 +627,9 @@ class Room extends Thing {
                     { name: 'box', label: 'Box CSS', type: 'text', value: this.style.box ? this.style.box : '' },
                     { name: 'title', label: 'Title CSS', type: 'text', value: this.style.title ? this.style.title : '' },
                     { name: 'description', label: 'Description CSS', type: 'text', value: this.style.description ? this.style.description : '' },
+
+                    { name: 'audio', label: 'Audio URL', type: 'text', value: this.audio ? this.audio : '', suggestions: '^audio/' },
+                    { name: 'audio_loop', label: 'Audio Loop', type: 'checkbox', value: this.audio_loop ? this.audio_loop : false },
                 ] };
             default:
                 return super.get_form_for(player, name);
@@ -647,7 +659,7 @@ class Exit extends Thing {
 
         if (this.is_blocked(player))    // TODO || this.source.is_blocked(player) || player.is_blocked(player)      // so you can only allow players to leave if they aren't fighting and they aren't sitting
             player.tell(this.format(this.msg_blocked_you));
-        else if (player.moveto(this.dest) && player.location == this.dest) {
+        else if (player.moveto(this.dest, player) && player.location == this.dest) {
             let opposite = this.dest.exits.find((exit) => { return exit.name == this.name });
 
             this.source.tell_all_but(player, this.format(this.msg_leave_others, { player: player, direction: this.name }));
@@ -729,12 +741,12 @@ class Item extends Thing {
         if (this.location == player || all)
             verbs.push('drop', 'give|this to object');
         if (this.location == player.location || all)
-            verbs.push('pickup/take/get');
+            verbs.push('pickup/take/get|this');
         return verbs;
     }
 
     pickup(args) {
-        if (this.location == args.player.location && this.moveto(args.player)) {
+        if (this.location == args.player.location && this.moveto(args.player, args.player)) {
             args.player.tell(this.format(this.msg_take_success_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_take_success_others, args));
         }
@@ -745,7 +757,7 @@ class Item extends Thing {
     }
 
     drop(args) {
-        if (this.location == args.player && this.moveto(args.player.location)) {
+        if (this.location == args.player && this.moveto(args.player.location, args.player)) {
             args.player.tell(this.format(this.msg_drop_success_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_drop_success_others, args));
         }
@@ -759,13 +771,13 @@ class Item extends Thing {
         // TODO this test isn't needed, but without it, the user will see 'i don't understand that' instead of 'i don't see that'
         if (!args.dobj || !args.iobj)
             args.player.tell("<action>I don't see that here.");
-        else if (!args.iobj.acceptable(this))
+        else if (!args.iobj.acceptable(this, args.player))
             args.player.tell(this.format("<action>{iobj.name} doesn't want {this.title}.", args));
         else if (this.location != args.player)
             args.player.tell(this.format("<action>You don't have {this.title}.", args));
         else if (args.iobj.location != args.player.location)
             args.player.tell(this.format("<action>{player.title} isn't here.", args));
-        else if (!this.moveto(args.iobj))
+        else if (!this.moveto(args.iobj, args.player))
             args.player.tell(this.format("<action>You try to give {this.title} to {iobj.name} but fail somehow.", args));
         else {
             args.player.tell(this.format("<action>You give {this.title} to {iobj.name}.", args));
@@ -800,8 +812,62 @@ class UseableItem extends Item {
 
 
 class Container extends Item {
+    acceptable(obj, by) {
+        return true;
+    }
 
+    get_view(player) {
+        let view = super.get_view(player);
+        view.contents = this.contents.map(function (item) {
+            return item.get_view(player);
+        });
+        return view;
+    }
+
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player)
+            verbs.push('get/take|string from/out of this', 'put/place|object in/into/inside this');
+        return verbs;
+    }
+
+    get(args) {
+        if (!args.dobj)
+            args.dobj = this.find_object(args.dobjstr);
+
+        console.log("GET", args);
+        if (!args.dobj)
+            args.player.tell(this.format("I don't see that in {this.title}."));
+        else if (this.location != args.player)
+            args.player.tell(this.format("You have to be holding {this.title} first."));
+        else if (args.dobj.location == this && args.dobj.moveto(args.player, args.player)) {
+            args.player.tell(this.format(this.msg_get_success_you, args));
+            args.player.location.tell_all_but(args.player, this.format(this.msg_get_success_others, args));
+        }
+        else {
+            args.player.tell(this.format(this.msg_get_fail_you, args));
+        }
+    }
+
+    put(args) {
+        if (this.location != args.player) {
+            args.player.tell(this.format("You have to be holding {this.title} first."));
+        }
+        else if (args.dobj.location == args.player && args.dobj.moveto(this, args.player)) {
+            args.player.tell(this.format(this.msg_put_success_you, args));
+            args.player.location.tell_all_but(args.player, this.format(this.msg_put_success_others, args));
+        }
+        else {
+            args.player.tell(this.format(this.msg_put_fail_you, args));
+        }
+    }
 }
+Container.prototype.msg_get_success_you     = "<action>You get {dobj.title} from {this.title}";
+Container.prototype.msg_get_success_others  = "<action>{player.name} gets {dobj.title} from {this.title}";
+Container.prototype.msg_get_fail_you        = "<action>You can't take that out of {dobj.title}";
+Container.prototype.msg_put_success_you     = "<action>You put {dobj.title} into {this.title}";
+Container.prototype.msg_put_success_others  = "<action>{player.name} puts {dobj.title} into {this.title}";
+Container.prototype.msg_put_fail_you        = "<action>You can't put that in {dobj.title}";
 
 
  

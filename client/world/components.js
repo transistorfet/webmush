@@ -9,6 +9,7 @@ const View = require('../views');
 const World = require('./model');
 const Decorations = require('./decorations');
 const Media = require('../media/components');
+const { UserInfo } = require('../users');
 
 
 const WorldArea = {
@@ -88,7 +89,7 @@ const WorldViewLocation = {
                 m(ObjectAttribute, { class: 'title', obj: vnode.attrs.location, attr: 'title' }),
                 m(ObjectAttribute, { class: 'description', obj: vnode.attrs.location, attr: 'description' }),
                 m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.location })),
-                vnode.attrs.location.audio ? m('audio', { src: vnode.attrs.location.audio, controls: true, autoplay: true, style: 'float: right; width: 120px;' }) : '',
+                vnode.attrs.location.audio ? m('audio', { src: vnode.attrs.location.audio, controls: true, loop: vnode.attrs.location.audio_loop, autoplay: UserInfo.prefs.autoplay, style: 'float: right; width: 120px;' }) : '',
                 m('span', { class: 'tinylabel' }, "Exits"),
                 m('table', { class: 'exits' }, vnode.attrs.location.exits.map(function (exit) {
                     return m('tr', [
@@ -131,7 +132,8 @@ const WorldViewPlayerBody = {
 
         return (
             m(View.Box, { class: 'body', borderless: true }, [
-                m('span', { class: 'tinylabel' }, "You're status is"), '',
+                m('span', { class: 'tinylabel' }, "You're status is"),
+                m('div', { }, vnode.attrs.body.state + ' and ' + vnode.attrs.body.stance),
                 m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.body })),
                 m('div', { class: 'column-display' }, [
                     m('table', [
@@ -146,6 +148,14 @@ const WorldViewPlayerBody = {
                         m('tr', [
                             m('td', { class: 'tinylabel' }, "HP:"),
                             m('td', vnode.attrs.body.hp),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "Level:"),
+                            m('td', vnode.attrs.body.level),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "XP:"),
+                            m('td', vnode.attrs.body.xp),
                         ]),
                         m('tr', [
                             m('td', { class: 'tinylabel' }, "You're fighting:"),
@@ -174,6 +184,12 @@ const WorldViewDetails = {
             m('span', { class: 'tinylabel', onclick: () => { World.view.details = null; } }, "You are looking at"),
             m(ObjectAttribute, { class: 'title', obj: vnode.attrs.details, attr: 'title' }),
             m(ObjectAttribute, { class: 'description', obj: vnode.attrs.details, attr: 'description' }),
+            vnode.attrs.details.contents
+                ? [
+                    m('span', { class: 'tinylabel' }, "Inside are"),
+                    m(WorldViewContents, { contents: vnode.attrs.details.contents }),
+                ]
+                : '',
         ]);
     },
 };

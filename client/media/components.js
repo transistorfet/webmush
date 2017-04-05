@@ -22,7 +22,7 @@ const Manager = {
             m('table',  files.map(function (item) {
                 return m('tr', [
                     m('td', m(View.EditableText, { ondone: FileInfo.rename.bind(FileInfo, item.path), value: item.name })),
-                    item.mimetype.match(/^image/) ? m('td', m('img', { class: 'image-preview big', src: item.path })) : m('td'),
+                    m('td', Preview(item)),
                     m('td', item.editable ? m('button', { onclick: FileInfo.delete.bind(FileInfo, item.path) }, 'Delete') : ''),
                 ]);
             }.bind(this))),
@@ -32,6 +32,14 @@ const Manager = {
     },
 };
 
+const Preview = function (item) {
+    if (item.mimetype.match(/^image/))
+        return m('img', { class: 'image-preview big', src: item.path });
+    else if (item.mimetype.match(/^audio/))
+        return m('audio', { src: item.path, controls: true });
+    else
+        return '';
+};
 
 const Uploader = {
     src: '',
@@ -77,9 +85,7 @@ const Uploader = {
     },
 };
 
-const Preview = {
 
-};
 
 
 const Picker = {
@@ -96,11 +102,7 @@ const Picker = {
     },
 
     view: function (vnode) {
-        let files = FileInfo.files;
-        if (vnode.attrs.filter) {
-            let filter = new RegExp(vnode.attrs.filter);
-            files = files.filter((file) => { return file.mimetype.match(vnode.attrs.filter); });
-        }
+        let files = FileInfo.list(vnode.attrs.filter);
         let info = files.find((file) => { return file.path == this.selected[0] });
 
         return [

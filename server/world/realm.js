@@ -12,18 +12,18 @@ const Kinds = [
         info: "Humans are stinky and evil",
         playable: true,
         size: "125-240",
-        attack: 10,
+        attack: 0,
         defense: 10,
-        damage: 1,
+        damage: [1, 8],
     },
     {
         name: "Cat",
         info: "Cats are cuddly and fun",
         playable: true,
         size: "30-50",
-        attack: 10,
+        attack: 0,
         defense: 10,
-        damage: 2,
+        damage: [1, 8, 2],
     },
     {
         name: "Gnome",
@@ -38,18 +38,18 @@ const Kinds = [
             Geoph leads the Gnome race.`,
         playable: true,
         size: "80-140",
-        attack: 10,
+        attack: 0,
         defense: 10,
-        damage: 1,
+        damage: [1, 4, 0],
     },
     {
         name: "Goat",
         info: "Goat are people too",
         playable: false,
         size: "80-140",
-        attack: 10,
+        attack: 0,
         defense: 10,
-        damage: 1,
+        damage: [1, 4, 0],
     },
 ];
 
@@ -86,11 +86,14 @@ function reinitRealmObjects(id) {
 
     let goat = DB.get_object(id++) || realm.create_npc({ kind: 'Goat', class: 'Fighter' });
     goat.name = 'A Goat';
+    goat.state = 'alive';
+    goat.hp = goat.maxhp;
     goat.moveto(DB.get_object(52));
 
 
     let sword = DB.get_object(id++) || new DB.Classes.WieldableItem();
     sword.name = 'sword';
+    sword.damage = [1, 8, 1];
     sword.moveto(DB.get_object(52));
 
 }
