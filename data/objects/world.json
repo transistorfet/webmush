@@ -1,6 +1,6 @@
 [
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 32,
     "name": "Limbo",
     "aliases": [],
@@ -11,6 +11,9 @@
       },
       {
         "$ref": 35
+      },
+      {
+        "$ref": 34
       }
     ],
     "exits": [],
@@ -19,7 +22,7 @@
     "onLoad": "function () { DB.define('Limbo', this); }"
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 33,
     "name": "The Lobby",
     "aliases": [],
@@ -42,21 +45,18 @@
     "onLoad": "function () { DB.define('Lobby', this); }"
   },
   {
-    "$type": 3,
+    "$type": "Player",
     "id": 34,
     "name": "Wizzy",
     "aliases": [
       "Wizard"
     ],
     "location": {
-      "$ref": 52
+      "$ref": 32
     },
     "contents": [
       {
         "$ref": 40
-      },
-      {
-        "$ref": 71
       },
       {
         "$ref": 39
@@ -64,27 +64,71 @@
     ],
     "canfollow": true,
     "following": null,
-    "connections": [
-      null
-    ],
-    "saved_location": {
-      "$ref": 52
-    },
     "isWizard": true,
     "position": "standing",
     "prefs": {
-      "autoplay": true
+      "autoplay": true,
+      "theme": {
+        "cssfile": "/media/default/theme/world.css",
+        "background": "",
+        "font": "",
+        "box": "",
+        "title": "",
+        "description": ""
+      }
+    },
+    "connections": [],
+    "saved_location": {
+      "$ref": 52
     },
     "description": "A short person with a long white beard and a pointy blue hat.",
     "fullname": "Wizzy The Wizard",
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
     "icon": "/media/default/img/icons.png?12x6",
     "body": {
-      "$ref": 72
+      "$class": "Body",
+      "gameutils": {
+        "$ref": 68
+      },
+      "owner": {
+        "$ref": 34
+      },
+      "kind": "Gnome",
+      "class": "Mage",
+      "state": "alive",
+      "stance": "standing",
+      "level": 1,
+      "xp": 2379,
+      "hp": 20,
+      "maxhp": 20,
+      "base_stats": {
+        "str": 12,
+        "dex": 8,
+        "int": 8,
+        "wis": 11,
+        "con": 14,
+        "cha": 12,
+        "luck": 15,
+        "attack": 0,
+        "defense": 10,
+        "damage": [
+          1,
+          4,
+          0
+        ]
+      },
+      "fighting": null,
+      "wimpy": 0.2,
+      "wielding": {
+        "$ref": 70
+      },
+      "wearing": {},
+      "coins": 0,
+      "stats": null
     }
   },
   {
-    "$type": 3,
+    "$type": "Player",
     "id": 35,
     "name": "Lowely",
     "aliases": [],
@@ -94,21 +138,24 @@
     "contents": [],
     "canfollow": true,
     "following": null,
-    "connections": [],
-    "saved_location": {
-      "$ref": 52
-    },
     "isWizard": false,
     "position": "standing",
     "prefs": {
-      "autoplay": true
+      "autoplay": true,
+      "theme": {
+        "cssfile": "/media/default/theme/world.css"
+      }
+    },
+    "connections": [],
+    "saved_location": {
+      "$ref": 52
     },
     "description": "An anthropormorphic worm with a green hat, and a single big brown boot.",
     "fullname": "Lowely Worm",
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu"
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 36,
     "name": "The Coat Check",
     "aliases": [],
@@ -123,7 +170,7 @@
     "description": "There is a counter here for checking your coats and belongings, but no one as behind the counter."
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 37,
     "name": "west",
     "aliases": [],
@@ -139,7 +186,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 38,
     "name": "east",
     "aliases": [],
@@ -155,7 +202,7 @@
     "isOpen": true
   },
   {
-    "$type": 6,
+    "$type": "Item",
     "id": 39,
     "name": "Doohickey",
     "aliases": [],
@@ -166,7 +213,7 @@
     "description": "It's a general purpose tool for anything you want."
   },
   {
-    "$type": 7,
+    "$type": "UseableItem",
     "id": 40,
     "name": "The Party Button",
     "aliases": [],
@@ -180,7 +227,7 @@
     "msg_use_others": "{player.title} pulls out a big button and presses it.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying."
   },
   {
-    "$type": 2,
+    "$type": "Being",
     "id": 41,
     "name": "Ducky",
     "aliases": [],
@@ -195,7 +242,7 @@
     "annoy": "function (args) {\n        setTimeout(function () {\n            if (this.location)\n                this.location.say({ player: this, text: \"Quack \".repeat(1 + Math.floor(Math.random() * 3)).trim() });\n            this.annoy();\n        }.bind(this), 30000 + Math.random() * 30000);\n    }"
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 42,
     "name": "The Elevators",
     "aliases": [],
@@ -233,7 +280,7 @@
     }
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 43,
     "name": "north",
     "aliases": [],
@@ -249,7 +296,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 44,
     "name": "Ground",
     "aliases": [],
@@ -265,7 +312,7 @@
     "isOpen": true
   },
   {
-    "$type": 3,
+    "$type": "Player",
     "id": 45,
     "name": "yoy",
     "aliases": [],
@@ -275,14 +322,17 @@
     "contents": [],
     "canfollow": true,
     "following": null,
-    "connections": [],
-    "saved_location": {
-      "$ref": 33
-    },
     "isWizard": false,
     "position": "standing",
     "prefs": {
-      "autoplay": true
+      "autoplay": true,
+      "theme": {
+        "cssfile": "/media/default/theme/world.css"
+      }
+    },
+    "connections": [],
+    "saved_location": {
+      "$ref": 33
     },
     "description": "You aren't sure what it is.",
     "fullname": "yoy",
@@ -290,7 +340,7 @@
     "email": ""
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 46,
     "name": "The Lounge",
     "aliases": [],
@@ -314,7 +364,7 @@
     }
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 47,
     "name": "Floor 1",
     "aliases": [],
@@ -330,7 +380,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 48,
     "name": "down",
     "aliases": [],
@@ -346,7 +396,7 @@
     "isOpen": true
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 49,
     "name": "The Realm",
     "aliases": [],
@@ -377,7 +427,7 @@
     "audio_loop": false
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 50,
     "name": "Floor 2",
     "aliases": [],
@@ -393,7 +443,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 51,
     "name": "down",
     "aliases": [],
@@ -409,7 +459,7 @@
     "isOpen": true
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 52,
     "name": "The Body Shop",
     "aliases": [],
@@ -425,7 +475,7 @@
         "$ref": 70
       },
       {
-        "$ref": 34
+        "$ref": 71
       }
     ],
     "exits": [
@@ -449,7 +499,7 @@
     "audio": ""
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 53,
     "name": "east",
     "aliases": [],
@@ -465,7 +515,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 54,
     "name": "west",
     "aliases": [],
@@ -481,7 +531,7 @@
     "isOpen": true
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 55,
     "name": "Turnstiles",
     "aliases": [],
@@ -496,7 +546,7 @@
     "description": "You aren't sure what it is."
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 56,
     "name": "north",
     "aliases": [],
@@ -514,7 +564,7 @@
     "msg_blocked_you": "You must create a character at the body shop before you can enter the realm."
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 57,
     "name": "south",
     "aliases": [],
@@ -530,7 +580,7 @@
     "isOpen": true
   },
   {
-    "$type": 2,
+    "$type": "Being",
     "id": 58,
     "name": "Shopkeeper",
     "aliases": [],
@@ -546,7 +596,7 @@
     "icon": "/media/default/img/icons.png?10x6"
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 59,
     "name": "Hotel Rooms",
     "aliases": [],
@@ -561,7 +611,7 @@
     "description": "There is nothing here at the moment.  It will likely be a place for user-owned rooms"
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 60,
     "name": "Floor 3",
     "aliases": [],
@@ -577,7 +627,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 61,
     "name": "down",
     "aliases": [],
@@ -593,7 +643,7 @@
     "isOpen": true
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 62,
     "name": "The Control Tower",
     "aliases": [],
@@ -617,7 +667,7 @@
     "description": "You are in an aircraft control tower looking out onto airport runways busy with airplanes taking off and landing.  The chatter of air traffic control can be heard in the background."
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 63,
     "name": "Floor 4",
     "aliases": [],
@@ -633,7 +683,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 64,
     "name": "down",
     "aliases": [],
@@ -649,7 +699,7 @@
     "isOpen": true
   },
   {
-    "$type": 4,
+    "$type": "Room",
     "id": 65,
     "name": "The Penthouse",
     "aliases": [],
@@ -664,7 +714,7 @@
     "description": "The place is a ransacked mess.  During the revolution against the 1%, the original owners were tar and feathered in the streets, and their possessions were looted.  Not much is left here.  How about you start a party in the ruined ashes."
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 66,
     "name": "Penthouse",
     "aliases": [],
@@ -680,7 +730,7 @@
     "isOpen": true
   },
   {
-    "$type": 5,
+    "$type": "Exit",
     "id": 67,
     "name": "down",
     "aliases": [],
@@ -696,7 +746,7 @@
     "isOpen": true
   },
   {
-    "$type": 9,
+    "$type": "GameUtils",
     "id": 68,
     "name": "RealmUtils",
     "aliases": [],
@@ -779,7 +829,7 @@
     ]
   },
   {
-    "$type": 11,
+    "$type": "CorporealBeing",
     "id": 69,
     "name": "A Goat",
     "aliases": [],
@@ -789,41 +839,48 @@
     "contents": [],
     "canfollow": false,
     "following": null,
-    "gameutils": {
-      "$ref": 68
-    },
-    "state": "dead",
-    "stance": "standing",
-    "kind": "Goat",
-    "class": "Fighter",
-    "level": 1,
-    "xp": 0,
-    "hp": 20,
-    "maxhp": 20,
-    "base_stats": {
-      "str": 15,
-      "dex": 14,
-      "int": 19,
-      "wis": 5,
-      "con": 0,
-      "cha": 12,
-      "luck": 16,
-      "attack": 10,
-      "defense": 10,
-      "damage": [
-        1,
-        4,
-        0
-      ]
-    },
-    "stats": null,
-    "fighting": null,
-    "wimpy": 0.2,
-    "wielding": null,
-    "wearing": {}
+    "body": {
+      "$class": "Body",
+      "gameutils": {
+        "$ref": 68
+      },
+      "owner": {
+        "$ref": 69
+      },
+      "kind": "Goat",
+      "class": "Fighter",
+      "state": "alive",
+      "stance": "standing",
+      "level": 1,
+      "xp": 0,
+      "maxhp": 20,
+      "base_stats": {
+        "str": 15,
+        "dex": 12,
+        "int": 10,
+        "wis": 10,
+        "con": 8,
+        "cha": 5,
+        "luck": 8,
+        "attack": 0,
+        "defense": 10,
+        "damage": [
+          1,
+          4,
+          0
+        ]
+      },
+      "fighting": null,
+      "wimpy": 0.2,
+      "wielding": null,
+      "wearing": {},
+      "coins": 0,
+      "stats": null,
+      "hp": 20
+    }
   },
   {
-    "$type": 14,
+    "$type": "WieldableItem",
     "id": 70,
     "name": "sword",
     "aliases": [],
@@ -831,6 +888,7 @@
       "$ref": 52
     },
     "contents": [],
+    "weight": 0,
     "damage": [
       1,
       8,
@@ -838,63 +896,16 @@
     ]
   },
   {
-    "$type": 8,
+    "$type": "Container",
     "id": 71,
     "name": "magic bag",
     "aliases": [
       "bag"
     ],
     "location": {
-      "$ref": 34
+      "$ref": 52
     },
     "contents": [],
     "description": "It's a magical bag that can hold anything!"
-  },
-  {
-    "$type": 12,
-    "id": 72,
-    "name": "Wizzy's Body",
-    "aliases": [],
-    "location": null,
-    "contents": [],
-    "canfollow": false,
-    "following": null,
-    "gameutils": {
-      "$ref": 68
-    },
-    "owner": {
-      "$ref": 34
-    },
-    "state": "alive",
-    "stance": "standing",
-    "kind": "Gnome",
-    "class": "Rogue",
-    "level": 1,
-    "xp": 183,
-    "hp": 20,
-    "maxhp": 20,
-    "base_stats": {
-      "str": 14,
-      "dex": 13,
-      "int": 13,
-      "wis": 14,
-      "con": 14,
-      "cha": 8,
-      "luck": 14,
-      "attack": 10,
-      "defense": 10,
-      "damage": [
-        1,
-        4,
-        0
-      ]
-    },
-    "stats": null,
-    "fighting": null,
-    "wimpy": 0.2,
-    "wielding": {
-      "$ref": 70
-    },
-    "wearing": {}
   }
 ]

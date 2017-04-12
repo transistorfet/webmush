@@ -1,5 +1,5 @@
 
-* new verbs, chess mechanism, body as obj or custom, request returns/msg printing, permissions system, body templates, fix language, visibility, refactor
+* new verbs, chess mechanism, request returns/msg printing, permissions system, body templates, fix language, visibility, refactor
  
 * multiple games; but how do you keep items separate between them?
 * maybe use es5 prototypes instead of es6 classes???
@@ -8,6 +8,7 @@
 * reuse object ids when allocating new objects
 * you could make verbs into a class, which has the function, the args string, and the help, and it would automatically do the rest.  The issue is
   how would you find the verbs on the object since keys() wont work...; you might have to go to es5 classes for this anyways
+* you need an automatic way of update data on the clients, maybe a pub/sub thing?  but can we avoid using an external db/mqtt broker?
 
 * add notifications for activity in the current room, and maybe a way to filter only certain events
 * add support for dot names in attributes, so that you can edit 'style.icon', etc
@@ -22,56 +23,39 @@
 
 * make input autofocus
 * further refactor console code? do you want to mix models and components?
+* make data dir selectable through an environment variable?
 
 * add form generation functions??
 * add a way to add data to a form without using a hidden field; just an attribute on the prompt object
-* you actually don't need form switcher in theme because the css file can be specified as a default
-
-* partially implement verb thing, except for verbs_for() function??
 
 * add password change to profile
 * add public flag to uploads
 * add image editor (client side?) that allows you to resize, pan, zoom, etc
-* expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
 
 * add builder permissions, so they can build but not do anything (how will permissions work?)
 * make room customize css textarea only accessible to certain wizard users (maybe a distinction between wizard and builder?)
 
-
+* expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
 
 * add a feedback system to prompt, so that it can send back info and get a response that updates the prompt, and you could use this
   to implement a chess type game, where you make a move, and it updates the view with the new positions
-
-* you need better display of custom messages for things; like 'The door is closed', 'You can't move because you're fighting', 'You're drunk and wander around instead'
-  what if something like the limbo move fails?  That should not fail but also shouldn't have to be an exception everywhere.  Could the accept/move/eject functions cause
-  a problem here (like you're fighting so you can't leave (but this is different)); or should there be an override, like using a wizard or special object to move it,
-  which always succeeds
-* custom messages for attacking, look at lpmud/discworld code
-* could you have a response object that gives the fail/success messages for each of the 3 possible cases (1st, 2nd, 3rd person)?  Could you even have this and throw
-  it as an error to be caught?
-* 4 ways of responding: throw, return, print, or store in a response object (inside args, or as a second argument)
-
-* should you totally proxify the character, so that it's the character that moves, the character that fights, etc, or should you go the other way
-  and make character a custom class, but the body stuff in Being, and have it call the few appropriate functions it needs
-  Or you could go even further and make the body an object, and as long as you're carrying it, you will be 'viewing' it in the world, and when you move
-  and pick up things, it would go to the body object, and you'd have to move things from yourself to your body in order to use them, but there could be
-  restrictions on what can move in either direction; so it'd be like a 'spirit' occupying a body
-* if you want the character/body verbs to appear next to the player ones, you'll have to proxy the body into the verbs_for and do_verbs_for functions
-
-* how will you convey the image of your body/character/stats to the user?  How can it be expandable/object-specified
-* you need a means of templating; you can make json encodable heirachies, or arrays of direct m() calls, or you could send a function as text, unfunctionify it, and
-  call it with the data in order to update the code.... that's the most dangerous, but it's also the most versitile
+* do you want to change the way you do server side templates?  right now it's an encoded function which works but... yeah
 * could you highlight stats that change, like during combat when your hit, your hp flashes red with the new number
-* merge decorations/style/views/etc?? refactor somehow
+* implement body-as-an-item; so that you're non-bodied player isn't effected by having a body; maybe selectable during body creation?
+
+* custom messages for attacking, look at lpmud/discworld code
 
 
-
-* make data dir selectable through an environment variable?
+* go through all uses of format() and regularize them as much as possible
 * you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
+* the text for moving from room to room is totally messed up if it's not the typical exits
+
+* what about initialization... can you factor all the constructor stuff out and into initialize/onLoad?
+* partially implement verb thing, except for verbs_for() function??
+
+
 
 * implement vending machine
-* finish implementing follow... how to move the character
-* it shouldn't be possible to move if you're sitting down; there should be a function of some kind that evaluates if an object can move, before the move occurs
 * invisible flag, or is_visible() function, which is checked when displaying contents of a room; then monsters could die and hide themselves without moving
 
 * add typing indicator, for chatting? make it easy to talk to someone who walks away
@@ -85,8 +69,6 @@
 
 COMMANDS:
 * whisper
-* stand? sit? or should you do fully customizable poses?
-* follow/unfollow
 * favorite location (and have menu at top)
 * who
 * where
@@ -107,6 +89,7 @@ RPG:
 
 * vending machine for items
 * a map item that can take you back to where you've been, or could be found... maybe it would only guide you rather than quicklink you (ie. cause the right exits to be highlighted)
+* add drinking: 'You're drunk and wander around instead' when you try to walk
 
 
 PROMPTS:
@@ -149,4 +132,10 @@ IDEAS:
     * music + background image for part of screen, to set the mood of the location
     * customizable css files, which could be stored on the server and downloaded only to the authorized user.  It shouldn't require protections because it's
       all client side.
+
+    * for the body as an object... You'd have an item on you of the type Body, that you carry, and it has a verb called 'enter', which makes you enter your body.  That causes your player
+      character to enter limbo, and you effectively sudo to the Body object; the connection ws.player object points to the body object.  It would then have to forward commands to
+      its 'owner', which is the player character.  The Body object would be taken out of limbo and placed in the real world.  There would be no way to transfer objects or players/beings
+      outside of their respective worlds...  There then becomes a clear delineation between the cloud world and the realm world (or the wasteland)
+
 

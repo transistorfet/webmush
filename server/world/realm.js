@@ -86,15 +86,21 @@ function reinitRealmObjects(id) {
 
     let goat = DB.get_object(id++) || realm.create_npc({ kind: 'Goat', class: 'Fighter' });
     goat.name = 'A Goat';
-    goat.state = 'alive';
-    goat.hp = goat.maxhp;
-    goat.moveto(DB.get_object(52));
+    goat.body.state = 'alive';
+    goat.body.hp = goat.body.maxhp;
+    goat.moveto(DB.get_object(52), 'force');
 
 
     let sword = DB.get_object(id++) || new DB.Classes.WieldableItem();
     sword.name = 'sword';
     sword.damage = [1, 8, 1];
-    sword.moveto(DB.get_object(52));
+    sword.moveto(DB.get_object(52), 'force');
+
+    let bag = DB.get_object(id++) || new DB.Classes.Container();
+    bag.name = 'magic bag';
+    bag.aliases = [ "bag" ];
+    bag.description = "It's a magical bag that can hold anything!";
+    bag.moveto(DB.get_object(52), 'force');
 
 }
 

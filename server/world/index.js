@@ -63,19 +63,19 @@ function initTestObjects() {
     let doohickey = new Basic.Item();
     doohickey.name = "Doohickey";
     doohickey.description = "It's a general purpose tool for anything you want.";
-    doohickey.moveto(wizard);
+    doohickey.moveto(wizard, 'force');
 
     let partybutton = new Basic.UseableItem();
     partybutton.name = "The Party Button";
     partybutton.description = "It's a small box with a big red button labelled \"Party\".";
     partybutton.msg_use_you = "You press the party button.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying.";
     partybutton.msg_use_others = "{player.title} pulls out a big button and presses it.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying.";
-    partybutton.moveto(wizard);
+    partybutton.moveto(wizard, 'force');
 
     let ducky = new Basic.Being();
     ducky.name = "Ducky";
     ducky.description = "An small duck is quacking and waddling around here.";
-    ducky.moveto(lobby);
+    ducky.moveto(lobby, 'force');
     ducky.onLoad = function () { this.annoy() };
     ducky.annoy = function (args) {
         setTimeout(function () {
@@ -97,6 +97,33 @@ DB.loadObjects();
 const Realm = require('./realm');
 Realm.reinitRealmObjects(68);
 
+/*
+// TODO testing a mechanism of finding verbs on an object
+function getMethods(obj) {
+    if (!obj)
+        return [];
+
+    //console.log(obj, obj.name);
+    let list = Object.getOwnPropertyNames(obj).reduce(function (acc, key) {
+        if (typeof obj[key] == 'function')
+            acc.push(key);
+        return acc;
+    }, []);
+
+    let proto = Object.getPrototypeOf(obj);
+    if (proto && proto != Root && proto != Object)
+        return list.concat(getMethods(proto));
+    //console.log("CON", Object.keys(obj.constructor));
+    //if (obj.constructor && obj.constructor != Object) {
+    //    return list.concat(getMethods(obj.constructor.prototype));
+    //}
+    return list;
+}
+
+console.log("LIST", getMethods(DB.get_object(52)));
+//let obj = DB.get_object(52);
+//console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(obj)), obj.constructor.prototype, Object.getPrototypeOf(obj.constructor.prototype), Object.getPrototypeOf(obj.constructor), obj.constructor.prototype.verbs_for);
+*/
 
 module.exports = Object.assign({ DB, Root }, Basic);
 

@@ -72,7 +72,7 @@ const WorldView = {
             m(WorldViewLocation, { location: vnode.attrs.view.location }),
             vnode.attrs.prompt ? m(View.Box, { class: 'prompt-info slide-down' }, vnode.attrs.prompt.render()) : '',
             vnode.attrs.view.details ? m(WorldViewDetails, { details: vnode.attrs.view.details }) : '',
-            m(WorldViewPlayer, { player: vnode.attrs.view.player, body: vnode.attrs.view.body }),
+            m(WorldViewPlayer, { player: vnode.attrs.view.player, body: vnode.attrs.view.body, body_template: vnode.attrs.view.body_template }),
         ];
     },
 };
@@ -119,7 +119,7 @@ const WorldViewPlayer = {
                 m('span', { class: 'tinylabel' }, "You are carrying"),
                 m(WorldViewContents, { contents: vnode.attrs.player.contents }),
                 //m('span', { class: 'tinylabel' }, "Your status is"),
-                m(WorldViewPlayerBody, { body: vnode.attrs.body }),
+                m(WorldViewPlayerBody, { body: vnode.attrs.body, body_template: vnode.attrs.body_template }),
             ])
         );
     },
@@ -133,43 +133,7 @@ const WorldViewPlayerBody = {
         return (
             m(View.Box, { class: 'body', borderless: true }, [
                 m('span', { class: 'tinylabel' }, "You're status is"),
-                m('div', { }, vnode.attrs.body.state + ' and ' + vnode.attrs.body.stance),
-                m('div', { class: 'tinylabel' }, m(WorldVerbList, { item: vnode.attrs.body })),
-                m('div', { class: 'column-display' }, [
-                    m('table', [
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "Kind:"),
-                            m('td', m('a', { onclick: World.info.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "Class:"),
-                            m('td', m('a', { onclick: World.info.bind(World, vnode.attrs.body.class) }, vnode.attrs.body.class)),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "HP:"),
-                            m('td', vnode.attrs.body.hp),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "Level:"),
-                            m('td', vnode.attrs.body.level),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "XP:"),
-                            m('td', vnode.attrs.body.xp),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "You're fighting:"),
-                            m('td', vnode.attrs.body.fighting),
-                        ]),
-                    ]),
-                    m('table', [
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "Kind:"),
-                            // TODO fix this link to get info on your kind, displayed in the details window maybe?  the details window might have to become more generic
-                            m('td', m('a', { onclick: World.info.bind(World, vnode.attrs.body.kind) }, vnode.attrs.body.kind)),
-                        ]),
-                    ])
-                ])
+                vnode.attrs.body_template ? vnode.attrs.body_template(vnode.attrs.body) : '(template missing)',
             ])
         );
     },

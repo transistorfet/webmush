@@ -26,11 +26,22 @@ class Root {
         // do nothing
     }
 
+    /*
+    static create(args) {
+        let obj = new this.constructor();
+        //obj.initialize();
+        if (args && args.player)
+            args.player.tell(this.format("New object created: #{id} {name}", obj));
+        return obj;
+    }
+    */
+
     clone(args) {
         let obj = new this.constructor({ cloning: this });      // cloning allows any constructors to choose to copy over attributes
         Object.setPrototypeOf(obj, this);
+        //obj.initialize();
         if (args && args.player)
-            args.player.tell(this.format("New object created: #{id} {name}", obj));
+            args.player.tell(this.format("Object cloned as: #{id} {name}", obj));
         return obj;
     }
 
@@ -100,24 +111,41 @@ class Root {
         return null;
     }
 
+    // throws string on failure
     moveto(location, by) {
-        if (!location || this.location == location)
-            return false;
         if (!by)
             console.log("ERRR", "Oh no! nobody moved a thing");
 
-        for (let where = location; where; where = where.location) {
-            if (where == this)
-                return false;
-        }
+        // TODO should you still do the checks but catch any errors, so backup fixes can still work; like making sure you aren't wielding something when it's taken from you
+        if (by !== 'force') {
+            if (!location)
+                throw "You can't move something to nowhere.";
+            if (this.location == location)
+                throw this.format("{this.title} is already there.");
 
-        // TODO maybe if moveto doesn't have a by, it moves without checking these?
-        if (this.location && !this.location.ejectable(this, by))
-            return false;
-        if (!this.moveable(location, by))
-            return false;
-        if (location && !location.acceptable(this, by))
-            return false;
+            for (let where = location; where; where = where.location) {
+                if (where == this)
+                    throw "You can't move something into itself.";
+            }
+
+            // TODO maybe if moveto doesn't have a by, it moves without checking these?
+            let cando;
+            cando = this.location ? this.location.ejectable(this, by) : true;
+            if (cando !== true) {
+                console.log("not ejectable", cando);
+                throw cando;
+            }
+            cando = this.moveable(location, by);
+            if (cando !== true) {
+                console.log("not moveable", cando);
+                throw cando;
+            }
+            cando = location ? location.acceptable(this, by) : true;
+            if (cando !== true) {
+                console.log("not acceptable", cando);
+                throw cando;
+            }
+        }
 
         let oldLocation = this.location;
         if (oldLocation) {
@@ -133,7 +161,7 @@ class Root {
 
 
     acceptable(obj, by) {
-        return false;
+        throw this.format("{this.title} is not a container");
     }
 
     ejectable(obj, by) {
@@ -159,6 +187,10 @@ class Root {
             verbs: this.verbs_for(player),
             editable: this.editable_by(player),
         };
+    }
+
+    update_view(section) {
+        // do nothing
     }
 
     update_contents() {
@@ -200,10 +232,15 @@ class Root {
                 else if (!this.check_args(args, parts[1]))
                     continue;
             }
-            this[funcname].apply(this, [args]);
+            //this[funcname].apply(this, [args]);
+            this.call_verb(funcname, args);
             return true;
         }
         return false;
+    }
+
+    call_verb(verbname, args) {
+        this[verbname].apply(this, [args]);
     }
 
     check_args(args, signature) {
@@ -219,18 +256,19 @@ class Root {
 
     check_form(args, name, form) {
         if (!args.response) {
-            args.player.prompt(this.id, name, form ? form : this.get_form_for(args.player, name));
+            args.player.prompt(this.id, name, form || this.get_form_for(args.player, name));
             return false;
         }
         else
-            this.validate_form_for(args.player, args.response, form ? form : name);
+            this.validate_form_for(args.player, args.response, form || name);
         return true;
     }
 
     editable_by(player) {
-        return ['name', 'aliases|a', 'title'];
+        return ['name', 'aliases|array', 'title'];
     }
 
+    // throws string on failure
     edit_by(player, attr, value) {
         // TODO add support for subelements of attributes (like style.icon)
         let editables = this.editable_by(player);
@@ -242,8 +280,8 @@ class Root {
             throw "You aren't allowed to edit that attribute";
 
         let typename = info.split('|').pop();
-        if (!typename) typename = 's';
-        if (typename in typeLetters && typeLetters[typename](value, this))
+        if (!typename) typename = 'string';
+        if (typename in typeChecks && typeChecks[typename](value, this))
             throw "The value for that attribute must be an " + typename;
 
         this[attr] = value;
@@ -255,6 +293,7 @@ class Root {
         return null;
     }
 
+    // throws validation error of invalid inputs
     validate_form_for(player, response, name) {
         let errors = [ ];
         let form = typeof name == 'string' ? this.get_form_for(player, name) : name;
@@ -301,12 +340,12 @@ class Root {
     }
 };
 
-var typeLetters = {
-    n: (v) => { return typeof v == 'number'; },
-    s: (v) => { return typeof v == 'string'; },
-    a: (v) => { return Array.isArray(v); },
-    o: (v) => { return v instanceof Root; },
-    t: (v, t) => { return v == t; },
+var typeChecks = {
+    number: (v) => { return typeof v == 'number'; },
+    string: (v) => { return typeof v == 'string'; },
+    array: (v) => { return Array.isArray(v); },
+    object: (v) => { return v instanceof Root; },
+    this: (v, t) => { return v == t; },
 };
 
 module.exports = Root;

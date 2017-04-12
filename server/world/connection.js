@@ -37,6 +37,7 @@ const onConnect = function (ws, req, next)
             return;
         }
 
+        // TODO if you pass this req.user.player, and set ws.connection = connection; then it can find the player through that, and the player object can be controlled by the special Connection class
         let connection = new Connection(ws);
 
         ws.player = req.user.player;
@@ -52,8 +53,8 @@ const onConnect = function (ws, req, next)
             console.log("WS RX", msg);
             try {
                 let res = onMsg(ws, JSON.parse(msg));
-                if (res)
-                    ws.send(JSON.stringify(res));
+                //if (res)
+                //    ws.send(JSON.stringify(res));
             }
             catch (e) {
                 console.log(e.stack);
@@ -74,13 +75,13 @@ const onMsg = function (ws, msg)
 
 
     if (msg.type == 'connect') {
-        ws.player.update_view();
+        args.player.update_view();
     }
     else if (msg.type == 'say') {
-        ws.player.location.say(args);
+        args.player.location.say(args);
     }
     else if (msg.type == 'emote') {
-        ws.player.location.emote(args);
+        args.player.location.emote(args);
     }
     else if (msg.type == 'do') {
         args.verb = msg.verb.toLowerCase();

@@ -105,11 +105,19 @@ const FieldList = {
         //      but the form/switch/etc elements will replace that with their own
         return m('table', { class: 'form-table' }, vnode.attrs.fields.map(function (item) {
             let info = FieldInfo(item, vnode.attrs.response);
-            return m('tr', [
-                m('td', m('label', typeof item.label == 'string' ? item.label : item.name.capitalize())),
-                m('td', !info ? { colspan: 2 } : undefined, Field.call(this, item, vnode.attrs.response)),
-                info ? m('td', m('div', { class: 'option-info' }, info)) : '',
-            ]);
+            if (typeof item.label == 'string') {
+                return m('tr', [
+                    //m('td', m('label', typeof item.label == 'string' ? item.label : item.name.capitalize())),
+                    m('td', m('label', item.label)),
+                    m('td', !info ? { colspan: 2 } : undefined, Field.call(this, item, vnode.attrs.response)),
+                    info ? m('td', m('div', { class: 'option-info' }, info)) : '',
+                ]);
+            }
+            else {
+                return m('tr', [
+                    m('td', { colspan: '100%' }, Field.call(this, item, vnode.attrs.response)),
+                ]);
+            }
         }.bind(this)));
     },
 };

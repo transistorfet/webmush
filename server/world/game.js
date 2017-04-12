@@ -5,6 +5,9 @@ const DB = require('./db');
 const Root = require('./root');
 const Basic = require('./basic');
 
+const Strings = require('../../lib/strings');
+
+
 class GameUtils extends Root {
 
     onLoad() {
@@ -14,8 +17,6 @@ class GameUtils extends Root {
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
         verbs.push('create');
-        if (player.body)
-            verbs.push(!player.body.fighting ? 'fight|object' : 'flee/stop/runaway');
         return verbs;
     }
 
@@ -25,7 +26,8 @@ class GameUtils extends Root {
         }
         else {
             if (args.player.body) {
-                args.player.body.recycle();
+                //args.player.body.recycle();
+                args.player.body.owner = null;
                 args.player.body = null;
                 args.response = null;
             }
@@ -33,10 +35,9 @@ class GameUtils extends Root {
             if (!this.check_form(args, 'create'))
                 return;
 
-            args.player.body = new PlayerCharacter({}, this, args.player);
+            args.player.body = new Body({}, this, args.player);
             // TODO move the actual character creation to the initialize step instead of the constructor, so loading doesn't recreated a character only to be overwritten
             args.player.body.initialize({ kind: args.response.kind, class: args.response.class });
-            args.player.body.name = args.player.name + "'s Body";
             args.player.tell("You've created a new character!");
             args.player.location.update_contents();
         }
@@ -56,73 +57,30 @@ class GameUtils extends Root {
     }
 
     create_npc(options) {
-        let npc = new PlayerCharacter({}, this);
-        npc.initialize({ kind: options.kind ? options.kind : 'Goat', class: options.class ? options.class : 'Fighter' });
+        // TODO this is now wrong
+        let npc = new Basic.CorporealBeing({}, this);
+        npc.body = new Body({}, this, npc);
+        npc.body.initialize({ kind: options.kind || 'Goat', class: options.class || 'Fighter' });
         return npc;
     }
 
-    /*
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (player.body)
-            verbs.push(!player.body.fighting ? 'fight|object' : 'flee/stop/runaway');
-        return verbs;
+    help(args) {
+        let text = args.text.trim().toLowerCase();
+
+        let kind = this.kinds.find((kind) => { return kind.name.toLowerCase() == text; });
+        if (kind)
+            args.player.tell_msg({ type: 'update', details: { title: "Kind: " + kind.name, description: kind.info } });
+
+        let cls = this.kinds.find((cls) => { return cls.name.toLowerCase() == text; });
+        if (cls)
+            args.player.tell_msg({ type: 'update', details: { title: "Class: " + cls.name, description: cls.info } });
     }
-    */
-
-    fight(args) {
-        let character = args.player.body;
-
-        if (character.fighting)
-            args.player.tell("You are already fighting something!");
-        else if (args.dobj == args.player)
-            args.player.tell("You can't fight yourself, silly.");
-        else if (!(args.dobj instanceof MortalBeing))
-            args.player.tell(this.format("You can't fight {dobj.title}.", args));
-        else if (args.dobj.state != 'alive')
-            args.player.tell(this.format("You can't fight someone who's not alive.", args));
-        else if (args.player.location != args.dobj.location)
-            args.player.tell("You can't fight someone who isn't here.");
-        else if (!args.player.location.allowfighting)
-            args.player.tell("You aren't allowed to fight here.  Take it outside.");
-        else {
-            // TODO restrictions?  initiative?
-            character.fighting = args.dobj;
-            // TODO after initial attack, assuming player gets initiative, do they run away?
-            args.dobj.fighting = character;
-
-            args.player.tell(this.format("<action>You start fighting {dobj.title}.", args));
-            args.dobj.tell(this.format("<action>{player.title} start fighting you!", args));
-            args.player.location.tell_all_but([ args.player, args.dobj ], this.format("<action>{player.title} start fighting {dobj.title}!", args));
-            args.player.location.update_contents();
-        }
-    }
-
-    flee(args) {
-        let character = args.player.body;
-
-        if (!character.fighting)
-            args.player.tell("You aren't fighting anything!?");
-        else {
-            // TODO all sorts of checks
-            let opponent = character.fighting;
-            character.fighting = null;
-            // TODO check if opponent stops fighting
-            opponent.fighting = null;
-
-            args.player.tell(this.format("<action>You flee from the fight.", args));
-            opponent.tell(this.format("<action>{player.title} runs away!", args));
-            args.player.location.tell_all_but([ args.player, opponent ], args.player.format("<action>{this.title} runs away from {title}!", opponent));
-            args.player.location.update_contents();
-        }
-    }
-
 
     static roll(dice, sides, mod) {
         let roll = 0;
         for (let i = 0; i < dice; i++)
             roll += Math.floor(Math.random() * sides + 1);
-        return roll + (mod ? mod : 0);
+        return roll + (mod || 0);
     }
 
 
@@ -152,13 +110,11 @@ add all effects to base stats to get current stats
 */
 
 
-
-
-class MortalBeing extends Basic.Being {
-    constructor(options, gameutils) {
-        super(options);
-        MortalBeing.list.push(this);
+class Body {
+    constructor(options, gameutils, owner) {
+        Body.list.push(this);
         this.gameutils = gameutils;
+        this.owner = owner;
     }
 
     initialize(options) {
@@ -181,17 +137,95 @@ class MortalBeing extends Basic.Being {
         this.coins = 0;
     }
 
-    get brief() {
-        return this.format("{this.owner.title} is {this.stance} here.");
+    get_view(player) {
+        //let view = super.get_view(player);
+        let view = { };
+        view.kind = this.kind;
+        view.class = this.class;
+        view.state = this.state;
+        view.stance = this.stance;
+        view.level = this.level;
+        view.xp = this.xp;
+        view.hp = this.hp;
+        view.maxhp = this.maxhp;
+        view.str = this.base_stats.str;
+        view.dex = this.base_stats.dex;
+        view.int = this.base_stats.int;
+        view.wis = this.base_stats.wis;
+        view.con = this.base_stats.con;
+        view.cha = this.base_stats.cha;
+        view.luck = this.base_stats.luck;
+        view.fighting = this.fighting ? this.fighting.name : 'nobody';
+        return view;
     }
 
-    moveable(to, by) {
-        if (this.fighting)
-            return false;
-        if (this.stance == 'sitting')
-            return false;
-        return true;
+    get_template(player) {
+        // TODO are there dangers of this?
+        if (player != this && player != this.owner)
+            return 'probably wrong';
+
+        return function (body) {
+            return [
+                m('div', { }, body.state + ' and ' + body.stance),
+                m('div', { class: 'column-display' }, [
+                    m('table', [
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "Kind:"),
+                            // TODO fix this link to get info on your kind, displayed in the details window maybe?  the details window might have to become more generic
+                            m('td', m('a', { onclick: World.info.bind(World, body.kind) }, body.kind)),
+                            m('td', { class: 'tinylabel' }, "Class:"),
+                            m('td', m('a', { onclick: World.info.bind(World, body.class) }, body.class)),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "HP:"),
+                            m('td', body.hp + " / " + body.maxhp),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "Level:"),
+                            m('td', body.level),
+                            m('td', { class: 'tinylabel' }, "XP:"),
+                            m('td', body.xp),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "You're fighting:"),
+                            m('td', body.fighting),
+                        ]),
+                    ]),
+                    m('table', [
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "STR:"),
+                            m('td', body.str),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "DEX:"),
+                            m('td', body.dex),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "INT:"),
+                            m('td', body.int),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "WIS:"),
+                            m('td', body.wis),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "CON:"),
+                            m('td', body.con),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "CHA:"),
+                            m('td', body.cha),
+                        ]),
+                        m('tr', [
+                            m('td', { class: 'tinylabel' }, "Luck:"),
+                            m('td', body.luck),
+                        ]),
+                    ]),
+                ]),
+            ];
+        };
     }
+
 
     timestep() {
         // TODO do... things...
@@ -242,10 +276,10 @@ class MortalBeing extends Basic.Being {
     }
     */
 
-    calc_damage(opponent) {
+    calc_damage(opponentbody) {
         let attackRoll = GameUtils.roll(1, 20);
-        let attackMod = /*this.stats.attack + */ (this.stats.str - 10) * 0.2;
-        let defenseMod = opponent.stats.defense;
+        let attackMod = (this.stats.str - 10) * 0.2;
+        let defenseMod = opponentbody.stats.defense;
         console.log("To Hit", attackRoll, attackMod, defenseMod);
         if (attackRoll + attackMod > defenseMod) {
             let damageRoll = GameUtils.roll.apply(null, this.wielding ? this.wielding.damage : this.stats.damage);
@@ -254,38 +288,23 @@ class MortalBeing extends Basic.Being {
         return 0;
     }
 
-    attack_opponent(opponent) {
-        let damage = this.calc_damage(opponent);
+    attack_opponent(opponentbody) {
+        let damage = this.calc_damage(opponentbody);
         console.log("Damage", damage, this.wielding ? this.wielding.damage : this.stats.damage);
-        if (damage <= 0) {
-            this.tell(this.format("<attack>You MISSED {title}!?", opponent));
-            opponent.tell(opponent.format("<defense>{title} MISSED you!", this));
-        }
-        else {
-            opponent.hp -= damage;
-            if (opponent.hp > 0) {
-                this.tell(this.format("<attack>You hit {title} with your fist", opponent));
-                opponent.tell(opponent.format("<defense>{title} hits you with their fist!", this));
-            }
-            else {
-                this.fighting = null;
-                opponent.fighting = null;
+        opponentbody.hp -= damage;
 
-                this.tell(this.format("<attack>You KILLED {title}!!! How could you!?", opponent));
-                opponent.tell(opponent.format("<defense>{title} has killed you... you are now dead", this));
+        if (opponentbody.hp <= 0) {
+            this.fighting = null;
+            opponentbody.fighting = null;
 
-                this.win(opponent);
-                opponent.die();
-                if (this.location)
-                    this.location.update_contents();
-                else if (opponent.location)
-                    opponent.location.update_contents();
-            }
+            this.win(opponentbody);
+            opponentbody.die();
         }
+        return damage;
     }
 
-    win(opponent) {
-        this.xp += Math.floor(Math.pow(100, Math.log10(opponent.maxhp) / 1.15));
+    win(opponentbody) {
+        this.xp += Math.floor(Math.pow(100, Math.log10(opponentbody.maxhp) / 1.15));
         // TODO check if you level up
     }
 
@@ -294,69 +313,110 @@ class MortalBeing extends Basic.Being {
     }
 
 
-    get_view(player) {
-        let view = super.get_view(player);
-        view.state = this.state;
-        view.stance = this.stance;
-        view.kind = this.kind;
-        view.class = this.class;
-        view.hp = this.hp;
-        view.maxhp = this.maxhp;
-        view.level = this.level;
-        view.xp = this.xp;
-        view.fighting = this.fighting ? this.fighting.name : 'nobody';
-        return view;
+
+    //// Owner-Hooked Methods ////
+    get brief() {
+        if (this.owner)
+            return this.owner.format("{title} is {body.stance} here.", this.owner);
+        else
+            return "A souless body is somehow here... this isn't supposed to happen";
     }
 
-    get_template(player) {
-        // TODO are there dangers of this?  maybe move it to MortalBeing?
-        if (player != this && player != this.owner) {
-            return function (context) {
-                return m('table', { class: 'body' }, 'hey');
-            };
+    acceptable(obj, by) {
+        return true;
+    }
+
+    ejectable(obj, by) {
+        // TODO this doesn't entirely work because the object move might still fail; this is only testing if it might fail...
+        //      you could instead prevent objects being dropped if they're worn or wielded
+        if (this.wielding == obj) {
+            if (by)
+                throw "You're still wielding that";
+            else
+                this.wielding = null;
         }
-        else {
-            return function (context) {
-                // TODO full info
-                return m('table', { class: 'body' }, 'hey');
-            };
-        }
-        return [
-            { type: 'table', children: [
-                'kind',
-                'class',
-                [ "HP", 'hp' ],
-            ] },
-            //T('table', [ T('data', 'kind'), T('data', 'hp', 'HP') ])
-        ];
+        // TODO check for dropping what's being worn
+        return true;
+    }
+
+    moveable(to, by) {
+        // TODO should you check if fighting, and stop the fighting if not by (if connecting/disconnecting/initializing)
+        if (!by)
+            return true;
+
+        if (this.fighting)
+            throw "You're in the middle of a fight!  You must flee to escape.";
+        if (this.stance == 'sitting')
+            throw "You're too relaxed to move.";
+        return true;
     }
 
 
     verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (this == player || this.owner == player) {
+        //let verbs = super.verbs_for(player, all);
+        let verbs = [ ];
+        if (all)
+            verbs.push('help/info');
+        if (this.owner == player) {
             if (this.stance != 'standing' || all)
                 verbs.push('stand');
             if (this.stance != 'sitting' || all)
                 verbs.push('sit');
         }
         if (player.body && player.location.allowfighting && (this.state == 'alive' || all)) {
-            if (player.body.fighting != this || all)
-                verbs.push('fight|this');
-            if (player.body.fighting == this || all)
+            if (player.body.fighting != this.owner || all)
+                verbs.push('fight/kill|this');
+            if (player.body.fighting == this.owner || all)
                 verbs.push('flee/stop/runaway');
         }
         return verbs;
     }
 
     fight(args) {
-        //this.location.fight(args);
-        this.gameutils.fight(args);
+        if (!args.player.body)
+            args.player.tell("You have to have a body before you can fight");
+        else if (args.player.body.fighting)
+            args.player.tell("You are already fighting something!");
+        else if (args.dobj == args.player)
+            args.player.tell("You can't fight yourself, silly.");
+        else if (!(args.dobj instanceof Basic.CorporealBeing) || !args.dobj.body)
+            args.player.tell(args.player.format("You can't fight {dobj.title}.", args));
+        else if (args.dobj.body.state != 'alive')
+            args.player.tell(args.player.format("You can't fight someone who's not alive.", args));
+        else if (args.player.location != args.dobj.location)
+            args.player.tell("You can't fight someone who isn't here.");
+        else if (!args.player.location.allowfighting)
+            args.player.tell("You aren't allowed to fight here.  Take it outside.");
+        else {
+            // TODO restrictions?  initiative?
+            args.player.body.fighting = args.dobj;
+            // TODO after initial attack, assuming player gets initiative, do they run away?
+            args.dobj.body.fighting = args.player;
+
+            args.player.tell(args.player.format("<action>You start fighting {dobj.title}.", args));
+            args.dobj.tell(args.dobj.format("<action>{player.title} start fighting you!", args));
+            args.player.location.tell_all_but([ args.player, args.dobj ], args.player.location.format("<action>{player.title} start fighting {dobj.title}!", args));
+
+            args.player.update_view('location');
+        }
     }
 
     flee(args) {
-        //this.location.flee(args);
-        this.gameutils.flee(args);
+        if (!args.player.body.fighting)
+            args.player.tell("You aren't fighting anything!?");
+        else {
+            // TODO all sorts of checks
+            let opponent = args.player.body.fighting;
+            args.player.body.fighting = null;
+            // TODO check if opponent stops fighting
+            opponent.body.fighting = null;
+
+            args.player.tell(args.player.format("<action>You flee from the fight.", args));
+            opponent.tell(opponent.format("<action>{player.title} runs away!", args));
+            args.player.location.tell_all_but([ args.player, opponent ], args.player.format("<action>{this.title} runs away from {title}!", opponent));
+
+            args.player.update_view('location');
+        }
     }
 
 
@@ -364,23 +424,34 @@ class MortalBeing extends Basic.Being {
         this.stance = 'sitting';
 
         args.player.tell("<action>You sit down on the ground.");
-        args.player.location.tell_all_but(args.player, this.format("<action>{player.name} sits down on the ground.", args));
-        this.update_contents();
-        // TODO you have to do something about this issue... it needs a way to update but if this is a body, its location is invalid
-        //this.location.update_contents();
+        args.player.location.tell_all_but(args.player, Strings.format("<action>{player.name} sits down on the ground.", args));
+        if (this.owner) {
+            this.owner.update_view('player,body');
+            if (this.owner.location);
+                this.owner.location.update_contents();
+        }
     }
 
     stand(args) {
         this.stance = 'standing';
 
         args.player.tell("<action>You stand up.");
-        args.player.location.tell_all_but(args.player, this.format("<action>{player.name} stands up.", args));
-        this.update_contents();
-        //this.location.update_contents();
+        args.player.location.tell_all_but(args.player, Strings.format("<action>{player.name} stands up.", args));
+        if (this.owner) {
+            this.owner.update_view('player,body');
+            if (this.owner.location);
+                this.owner.location.update_contents();
+        };
     }
 
+    help(args) {
+        this.gameutils.help(args);
+    }
+
+
 }
-MortalBeing.list = [ ];
+DB.register(Body);
+Body.list = [ ];
 
 
 (function TimeCycle() {
@@ -388,33 +459,55 @@ MortalBeing.list = [ ];
 
     // TODO could you call a timestep function on the player character, as well as the room, and monsters, etc; so they can move
 
-    let fightingPlayers = [ ];
-    for (let i in MortalBeing.list) {
-        let being = MortalBeing.list[i];
-        if (!being)
+    let fightingBodies = [ ];
+    for (let i = 0; i < Body.list.length; i++) {
+        let body = Body.list[i];
+        if (!body.owner) {
+            // if the owner is null, the body has been deleted and should be removed, and we also need to patch the loop index
+            delete Body.list[i--];
             continue;
+        }
 
-        being.timestep();
+        let changed = body.timestep();
+        if (changed && !body.fighting && body.owner)
+            body.owner.update_view('body');
 
-        if (being.fighting) {
-            being.update_stats();
-            fightingPlayers.push([ being, being.roll_initiative() ]);
+        if (body.fighting) {
+            body.update_stats();
+            fightingBodies.push([ body, body.roll_initiative() ]);
         }
     }
 
     // Determine initiative order
-    fightingPlayers.sort((a, b) => { return a[1] - b[1] });
+    fightingBodies.sort((a, b) => { return a[1] - b[1] });
 
-    for (let i in fightingPlayers) {
-        let character = fightingPlayers[i][0];
-        let opponent = character.fighting;
+    for (let i in fightingBodies) {
+        let body = fightingBodies[i][0];
+        let opponentbody = body.fighting ? body.fighting.body : null;
 
-        // TODO do actual fight thing
-        if (opponent)       // the fight might end before this character gets a turn
-            character.attack_opponent(opponent);
+        // the fight might end before this character got a turn to hit
+        if (!opponentbody)
+            continue;
 
-        //player.tell(player.format("<attack>You hit {fighting.title} with your fist", player.body));
-        //opponent.tell(opponent.format("<defense>{title} hits you with their fist!", player));
+        let damage = body.attack_opponent(opponentbody);
+
+        // TODO move this to gameutils?
+        if (damage <= 0) {
+            body.owner.tell(body.owner.format("<attack>You MISSED {owner.title}!?", opponentbody));
+            opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} MISSED you!", body));
+        }
+        else if (opponentbody.hp > 0) {
+            body.owner.tell(body.owner.format("<attack>You hit {owner.title} with your fist", opponentbody));
+            opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} hits you with their fist!", body));
+        }
+        else {
+            body.owner.tell(body.owner.format("<attack>You KILLED {owner.title}!!! How could you!?", opponentbody));
+            opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} has killed you... you are now dead", body));
+        }
+
+        opponentbody.owner.update_view('body');
+        if (!body.fighting && body.owner.location)
+            body.owner.location.update_contents();
     }
 
     setTimeout(TimeCycle, Math.max(8000 - (Date.now() - start), 3000));
@@ -422,68 +515,46 @@ MortalBeing.list = [ ];
 
 
 
-class NonPlayerCharacter extends MortalBeing {
-    constructor(options, gameutils) {
-        super(options, gameutils);
+
+class BodyItem extends Basic.Player {     // TODO actually it should be PlayerCharacter, which inherits from Player...??
+    constructor(options) {
+        super(options);
+        this.owner = null;  // TODO how do you receive this?
     }
 
-    timestep() {
-        return super.timestep();
-        // TODO move around, attack maybe
-    }
-}
+    //do_verb_for() {
+        // TODO call the local ones or else call the Item ones, so you have pickup/drop etc
+    //}
 
-
-class PlayerCharacter extends MortalBeing {
-    constructor(options, gameutils, owner) {
-        super(options, gameutils);
-        this.owner = owner;
-    }
-
-    tell(text) {
-        if (this.owner)
-            this.owner.tell(text);
-    }
-
-    tell_msg(msg) {
-        if (this.owner)
-            this.owner.tell_msg(msg);
-    }
-
-    update_contents() {
-        this.owner.update_view('body');
-    }
-
-    verbs_for(player, all) {
-        let verbs = super.verbs_for(player, all);
-        if (all)
-            verbs.push('help/info');
-        return verbs;
-    }
-
-    help(args) {
-        let text = args.text.trim().toLowerCase();
-
-        let kind = this.gameutils.kinds.find((kind) => { return kind.name.toLowerCase() == text; });
-        if (kind)
-            args.player.tell_msg({ type: 'update', details: { title: "Kind: " + kind.name, description: kind.info } });
-
-        let cls = this.gameutils.kinds.find((cls) => { return cls.name.toLowerCase() == text; });
-        if (cls)
-            args.player.tell_msg({ type: 'update', details: { title: "Class: " + cls.name, description: cls.info } });
-    }
-
-    timestep() {
-        if (super.timestep() && this.owner) {
-            this.owner.update_view('body');
-            return true;
-        }
-        return false;
+    swap(args) {
+        // TODO set the ws.player value of all the connections to this object; it's like su
+        // could even just disconnect() from the old player and connect() to this one, for each connection
+        // but do you delete all the players connections and attach them this object?
     }
 }
 
 
-class WearableItem extends Basic.Item {
+
+
+
+
+
+class WeightedItem extends Basic.Item {
+    constructor(options) {
+        super(options);
+        this.weight = 0;
+    }
+
+    editable_by(player) {
+        let props = super.editable_by(player);
+        if (player.isWizard)
+            props.push('weight|number');
+        return props;
+    }
+}
+
+
+class WearableItem extends WeightedItem {
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
         if (this.location == player && player.body)
@@ -501,7 +572,19 @@ class WearableItem extends Basic.Item {
 }
 
 
-class WieldableItem extends Basic.Item {
+class WieldableItem extends WeightedItem {
+    constructor(options) {
+        super(options);
+        this.damage = [ 1, 4, 0 ];
+    }
+
+    editable_by(player) {
+        let props = super.editable_by(player);
+        if (player.isWizard)
+            props.push('damage|array');
+        return props;
+    }
+
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
         if (this.location == player && player.body)
@@ -527,7 +610,7 @@ class WieldableItem extends Basic.Item {
 }
 
 
-class EdibleItem extends Basic.Item {
+class EdibleItem extends WeightedItem {
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
         if (this.location == player)
@@ -541,7 +624,7 @@ class EdibleItem extends Basic.Item {
 }
 
 
-class DrinkableItem extends Basic.Item {
+class DrinkableItem extends WeightedItem {
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);
         if (this.location == player)
@@ -556,15 +639,52 @@ class DrinkableItem extends Basic.Item {
 
 
 class VendingMachine extends Basic.Thing {
-    
+    constructor(options) {
+        super(options);
+        this.items = [ ];
+    }
+
+    moveable(to, by) {
+        if (by.isWizard)
+            return true;
+        throw "It's bolted to the ground and wont budge";
+    }
+
+    editable_by(player) {
+        let props = super.editable_by(player);
+        if (player.isWizard)
+            props.push('items|array');
+        return props;
+    }
+
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (this.location == player.location)
+            verbs.push('purchase/buy|prompt');
+        return verbs;
+    }
+
+    purchase(args) {
+        console.log(args.response);
+    }
+
+    get_form_for(player, name) {
+        switch (name) {
+            case 'purchase':
+                return { label: "What would you like to buy?", fields: [
+
+                ] };
+            default:
+                return super.get_form_for(player, name);
+        }
+    }
 }
 
 
 module.exports = {
     GameUtils,
-    MortalBeing,
-    NonPlayerCharacter,
-    PlayerCharacter,
+    Body,
+    WeightedItem,
     WearableItem,
     WieldableItem,
     EdibleItem,

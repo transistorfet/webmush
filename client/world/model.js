@@ -30,8 +30,6 @@ const World = {
         else if (msg.type == 'update') {
             if (msg.player)
                 World.view.player = msg.player;
-            if (msg.body)
-                World.view.body = msg.body;
             if (msg.details)
                 World.view.details = msg.details;
             if (msg.location) {
@@ -39,6 +37,10 @@ const World = {
                     window.history.pushState({ id: msg.location.id }, 'previous_location');
                 World.view.location = msg.location;
             }
+            if (msg.body)
+                World.view.body = msg.body;
+            if (msg.body_template)
+                World.view.body_template = eval("(" + msg.body_template + ")");
         }
         else if (msg.type == 'prompt') {
             // TODO you should check to see if the previous prompt can be dismissed or not

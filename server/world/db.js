@@ -117,16 +117,18 @@ const DB = {
 
     makeObject(data, recurse) {
         let id = parseInt(data['id']);
-        let tid = parseInt(data['$type']);
+        //let tid = parseInt(data['$type']);
+        let typename = data['$type'];
         let pid = data['$prototype'] ? parseInt(data['$prototype']) : null;
-        if (tid < 0 || tid >= Objects.reservedObjects)
-            throw "Load Error: Unable to load object with a non-standard type id " + tid;
+        if (!(typename in DB.Classes))
+            throw "Load Error: Unable to load object with unregistered class " + typename;
 
         let obj;
         if (Objects[id])
             obj = Objects[id];
         else {
-            obj = new Objects[tid]({ id: id });
+            //obj = new Objects[tid]({ id: id });
+            obj = new DB.Classes[typename]({ id: id });
             if (Objects[id] != obj)
                 throw "Load Error: object id ignored by constructor for #" + id;
             if (pid !== null)
@@ -190,7 +192,7 @@ const DB = {
             else {
                 let jsonobj = { };
                 if (value instanceof DB.Classes.Root) {
-                    jsonobj['$type'] = value.constructor.id;
+                    jsonobj['$type'] = value.constructor.name;
                     jsonobj['$prototype'] = Object.getPrototypeOf(value).id;
                     DB.mark[jsonobj['$type']] = true;
                     DB.mark[jsonobj['$prototype']] = true;
@@ -203,7 +205,7 @@ const DB = {
                 }
 
                 for (let key in value) {
-                    if (!value.hasOwnProperty(key))
+                    if (!value.hasOwnProperty(key) || key[0] == '$')
                         continue;
                     jsonobj[key] = DB.simplifyObject(value[key]);
                 }
