@@ -219,8 +219,6 @@ class Player extends CorporealBeing {
         if (this.connections.length == 1) {
             try {
                 this.moveto(this.saved_location || DB.get_object(Player.lobby));
-                if (this.location == DB.get_object(Player.limbo))
-                    throw '';
             } catch (e) {
                 this.moveto(DB.get_object(Player.lobby), 'force');
             }
@@ -316,14 +314,15 @@ class Player extends CorporealBeing {
             args.player.tell("You can only teleport into a room object");
         else {
             let oldwhere = this.location;
-            let result = this.moveto(args.dobj, args.player);
-            if (result === true) {
-                oldwhere.tell_all_but(args.player, this.format("<action>{this.title} disappears in a flash of smoke.", args));
-                this.location.tell_all_but(args.player, this.format("<action>{this.title} appears in a flash of smoke.", args));
-                args.player.tell(this.format("<action>You teleport to {this.location.title}", args));
-            }
-            else
-                args.player.tell("<action>You try to teleport but fizzle instead.");
+
+            this.moveto(args.dobj, args.player);
+
+            oldwhere.tell_all_but(args.player, this.format("<action>{this.title} disappears in a flash of smoke.", args));
+            this.location.tell_all_but(args.player, this.format("<action>{this.title} appears in a flash of smoke.", args));
+            args.player.tell(this.format("<action>You teleport to {this.location.title}", args));
+
+            // TODO catch?
+            //args.player.tell("<action>You try to teleport but fizzle instead.");
         }
     }
 
@@ -707,25 +706,20 @@ class Exit extends Thing {
         if (!player.location == this.source)
             return false;
 
-        let result = this.is_blocked(player);
-        if (result) {
-            player.tell(this.format(typeof result == 'string' ? result : this.msg_blocked_you));
-            return false;
-        }
+        try {
+            this.is_blocked(player);
+            player.moveto(this.dest, player);
 
-        result = player.moveto(this.dest, player);
-        if (result === true && player.location == this.dest) {
             let opposite = this.dest.exits.find((exit) => { return exit.name == Exit.opposite_direction(this.name) });
 
             this.source.tell_all_but(player, this.format(this.msg_leave_others, { player: player, direction: this.name }));
             player.tell(this.format(this.msg_success_you, { direction: this.name, dest: this.dest }));
             this.dest.tell_all_but(player, this.format(this.msg_arrive_others, { player: player, direction: opposite ? opposite.name : 'somewhere' }));
             return true;
+        } catch (e) {
+            player.tell(this.format(typeof e == 'string' ? e : this.msg_fail_you));
+            return false;
         }
-        else {
-            player.tell(this.format(typeof result == 'string' ? result : this.msg_fail_you));
-        }
-        return false;
     }
 
 
@@ -784,7 +778,6 @@ class Exit extends Thing {
 }
 Exit.prototype.msg_success_you      = "You go {direction} to {dest.title}";
 Exit.prototype.msg_fail_you         = "Your way is blocked.";
-Exit.prototype.msg_blocked_you      = "The door is closed.";
 Exit.prototype.msg_leave_others     = "{player.title} leaves {direction}";
 Exit.prototype.msg_arrive_others    = "{player.title} enters from the {direction}";
 
@@ -803,23 +796,29 @@ class Item extends Thing {
     }
 
     pickup(args) {
-        if (this.location == args.player.location && this.moveto(args.player, args.player)) {
+        if (this.location != args.player.location)
+            args.player.tell("I don't see that here.");
+
+        try {
+            this.moveto(args.player, args.player);
             args.player.tell(this.format(this.msg_take_success_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_take_success_others, args));
-        }
-        else {
-            args.player.tell(this.format(this.msg_take_fail_you, args));
+        } catch (e) {
+            args.player.tell(typeof e == 'string' ? e : this.format(this.msg_take_fail_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_take_fail_others, args));
         }
     }
 
     drop(args) {
-        if (this.location == args.player && this.moveto(args.player.location, args.player)) {
+        if (this.location != args.player)
+            args.player.tell("You aren't carrying that.");
+
+        try {
+            this.moveto(args.player.location, args.player);
             args.player.tell(this.format(this.msg_drop_success_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_drop_success_others, args));
-        }
-        else {
-            args.player.tell(this.format(this.msg_drop_fail_you, args));
+        } catch (e) {
+            args.player.tell(typeof e == 'string' ? e : this.format(this.msg_drop_fail_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_drop_fail_others, args));
         }
     }
@@ -835,16 +834,11 @@ class Item extends Thing {
         else if (args.iobj.location != args.player.location)
             args.player.tell(this.format("{player.title} isn't here.", args));
         else {
-            let result = this.moveto(args.iobj, args.player);
-            if (typeof result == 'string')
-                args.player.tell(result);
-            else if (result !== true)
-                args.player.tell(this.format("<action>You try to give {this.title} to {iobj.name} but fail somehow.", args));
-            else {
-                args.player.tell(this.format("<action>You give {this.title} to {iobj.name}.", args));
-                args.iobj.tell(this.format("<action>{player.name} give you {this.title}.", args));
-                args.player.location.tell_all_but([args.player, args.iobj], this.format("<action>{player.name} gives {this.title} to {iobj.name}.", args));
-            }
+            this.moveto(args.iobj, args.player);
+
+            args.player.tell(this.format("<action>You give {this.title} to {iobj.name}.", args));
+            args.iobj.tell(this.format("<action>{player.name} give you {this.title}.", args));
+            args.player.location.tell_all_but([args.player, args.iobj], this.format("<action>{player.name} gives {this.title} to {iobj.name}.", args));
         }
     }
 }
@@ -897,17 +891,14 @@ class Container extends Item {
         if (!args.dobj)
             args.dobj = this.find_object(args.dobjstr);
 
-        console.log("GET", args);
         if (!args.dobj || args.dobj.location != this)
             args.player.tell(this.format("I don't see that in {this.title}."));
         else if (this.location != args.player)
             args.player.tell(this.format("You have to be holding {this.title} first."));
-        else if (args.dobj.moveto(args.player, args.player)) {
+        else {
+            args.dobj.moveto(args.player, args.player);
             args.player.tell(this.format(this.msg_get_success_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_get_success_others, args));
-        }
-        else {
-            args.player.tell(this.format(this.msg_get_fail_you, args));
         }
     }
 
@@ -916,21 +907,17 @@ class Container extends Item {
             args.player.tell(this.format("You have to be holding {this.title} first."));
         else if (args.dobj.location != args.player)
             args.player.tell(this.format("I don't see {dobj.title} here.", args));
-        else if (args.dobj.moveto(this, args.player)) {
+        else {
+            args.dobj.moveto(this, args.player);
             args.player.tell(this.format(this.msg_put_success_you, args));
             args.player.location.tell_all_but(args.player, this.format(this.msg_put_success_others, args));
-        }
-        else {
-            args.player.tell(this.format(this.msg_put_fail_you, args));
         }
     }
 }
 Container.prototype.msg_get_success_you     = "<action>You get {dobj.title} from {this.title}";
 Container.prototype.msg_get_success_others  = "<action>{player.name} gets {dobj.title} from {this.title}";
-Container.prototype.msg_get_fail_you        = "You can't take that out of {dobj.title}";
 Container.prototype.msg_put_success_you     = "<action>You put {dobj.title} into {this.title}";
 Container.prototype.msg_put_success_others  = "<action>{player.name} puts {dobj.title} into {this.title}";
-Container.prototype.msg_put_fail_you        = "You can't put that in {dobj.title}";
 
 
  
