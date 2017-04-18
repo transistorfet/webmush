@@ -1,5 +1,5 @@
 
-* new verbs, chess mechanism, request returns/msg printing, permissions system, body templates, fix language, visibility, refactor
+* new verbs, chess mechanism, permissions system, fix language, visibility, refactor
  
 * multiple games; but how do you keep items separate between them?
 * maybe use es5 prototypes instead of es6 classes???
@@ -43,15 +43,16 @@
 * could you highlight stats that change, like during combat when your hit, your hp flashes red with the new number
 * implement body-as-an-item; so that you're non-bodied player isn't effected by having a body; maybe selectable during body creation?
 
+
+
 * custom messages for attacking, look at lpmud/discworld code
-
-
 * go through all uses of format() and regularize them as much as possible
 * you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
 * the text for moving from room to room is totally messed up if it's not the typical exits
 
 * what about initialization... can you factor all the constructor stuff out and into initialize/onLoad?
 * partially implement verb thing, except for verbs_for() function??
+* implement death; you'll need to create a corpse object which is separate from the being's body
 
 
 

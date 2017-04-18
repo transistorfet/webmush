@@ -132,7 +132,7 @@ const WorldViewPlayerBody = {
 
         return (
             m(View.Box, { class: 'body', borderless: true }, [
-                m('span', { class: 'tinylabel' }, "You're status is"),
+                m('span', { class: 'tinylabel' }, "You're body is"),
                 vnode.attrs.body_template ? vnode.attrs.body_template(vnode.attrs.body) : '(template missing)',
             ])
         );

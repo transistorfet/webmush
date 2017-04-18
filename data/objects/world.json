@@ -11,9 +11,6 @@
       },
       {
         "$ref": 35
-      },
-      {
-        "$ref": 34
       }
     ],
     "exits": [],
@@ -52,7 +49,7 @@
       "Wizard"
     ],
     "location": {
-      "$ref": 32
+      "$ref": 52
     },
     "contents": [
       {
@@ -77,7 +74,9 @@
         "description": ""
       }
     },
-    "connections": [],
+    "connections": [
+      null
+    ],
     "saved_location": {
       "$ref": 52
     },
@@ -98,7 +97,7 @@
       "state": "alive",
       "stance": "standing",
       "level": 1,
-      "xp": 2379,
+      "xp": 2562,
       "hp": 20,
       "maxhp": 20,
       "base_stats": {
@@ -476,6 +475,12 @@
       },
       {
         "$ref": 71
+      },
+      {
+        "$ref": 72
+      },
+      {
+        "$ref": 34
       }
     ],
     "exits": [
@@ -763,6 +768,17 @@
         "damage": [
           1,
           8
+        ],
+        "bodyparts": [
+          "head",
+          "torso",
+          "arms",
+          "hands",
+          "legs",
+          "feet"
+        ],
+        "attackmsgs": [
+          "<attack>You hit {opponent.title} with your fist"
         ]
       },
       {
@@ -852,7 +868,7 @@
       "state": "alive",
       "stance": "standing",
       "level": 1,
-      "xp": 0,
+      "xp": 183,
       "maxhp": 20,
       "base_stats": {
         "str": 15,
@@ -907,5 +923,23 @@
     },
     "contents": [],
     "description": "It's a magical bag that can hold anything!"
+  },
+  {
+    "$type": "VendingMachine",
+    "id": 72,
+    "name": "vending machine",
+    "aliases": [
+      "machine"
+    ],
+    "location": {
+      "$ref": 52
+    },
+    "contents": [],
+    "items": [
+      {
+        "$ref": 70
+      }
+    ],
+    "description": "A vending machine with all sorts of goodies inside."
   }
 ]

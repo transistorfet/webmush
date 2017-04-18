@@ -9,6 +9,10 @@ const Root = require('./root');
 
 
 class Thing extends Root {
+    visible(to) {
+        return true;
+    }
+
     get_view(player) {
         let view = super.get_view(player);
         view.description = this.description;
@@ -142,6 +146,12 @@ class Being extends Thing {
 
 
 class CorporealBeing extends Being {
+    get title() {
+        if (this.body)
+            return this.body.title;
+        return super.title;
+    }
+
     get brief() {
         if (this.body)
             return this.body.brief;
@@ -164,6 +174,12 @@ class CorporealBeing extends Being {
         if (this.body)
             return this.body.moveable(to, by);
         return super.moveable(to, by);
+    }
+
+    visible(to) {
+        if (this.body)
+            return this.body.visible(to);
+        return super.visible(to);
     }
 
     verbs_for(player, all) {
@@ -265,7 +281,9 @@ class Player extends CorporealBeing {
         let view = super.get_view(player);
         view.brief = this.brief;
         if (player == this) {
-            view.contents = this.contents.map(function (item) {
+            view.contents = this.contents.filter(function (item) {
+                return item.visible(player);
+            }).map(function (item) {
                 return item.get_view(player);
             });
         }
@@ -505,7 +523,9 @@ class Room extends Thing {
             view.audio = this.audio;
             view.audio_loop = this.audio_loop ? true : false;
         }
-        view.contents = this.contents.filter((obj) => { return obj != player }).map(function (item) {
+        view.contents = this.contents.filter(function (obj) {
+            return obj != player && obj.visible(player);
+        }).map(function (item) {
             return item.get_view(player);
         });
         view.exits = this.exits.map(function (exit) {
@@ -874,6 +894,7 @@ class Container extends Item {
 
     get_view(player) {
         let view = super.get_view(player);
+        // TODO should this also filter out invisible objects?
         view.contents = this.contents.map(function (item) {
             return item.get_view(player);
         });

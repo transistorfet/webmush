@@ -15,6 +15,10 @@ const Kinds = [
         attack: 0,
         defense: 10,
         damage: [1, 8],
+        bodyparts: [ 'head', 'torso', 'arms', 'hands', 'legs', 'feet' ],
+        attackmsgs: [
+            "<attack>You hit {opponent.title} with your fist"
+        ],
     },
     {
         name: "Cat",
@@ -102,6 +106,12 @@ function reinitRealmObjects(id) {
     bag.description = "It's a magical bag that can hold anything!";
     bag.moveto(DB.get_object(52), 'force');
 
+    let vm = DB.get_object(id++) || new DB.Classes.VendingMachine();
+    vm.name = 'vending machine';
+    vm.aliases = [ "machine" ];
+    vm.description = "A vending machine with all sorts of goodies inside.";
+    vm.items = [ sword ];
+    vm.moveto(DB.get_object(52), 'force');
 }
 
 module.exports = {

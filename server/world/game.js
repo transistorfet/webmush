@@ -315,6 +315,12 @@ class Body {
 
 
     //// Owner-Hooked Methods ////
+    get title() {
+        if (this.state == 'dead')
+            return "The Ghost Of " + (this.owner.fullname || this.owner.name);
+        return this.owner.fullname || this.owner.name;
+    }
+
     get brief() {
         if (this.owner)
             return this.owner.format("{title} is {body.stance} here.", this.owner);
@@ -348,6 +354,12 @@ class Body {
             throw "You're in the middle of a fight!  You must flee to escape.";
         if (this.stance == 'sitting')
             throw "You're too relaxed to move.";
+        return true;
+    }
+
+    visible(to) {
+        if (this.state != 'alive')
+            return false;
         return true;
     }
 
@@ -516,10 +528,11 @@ Body.list = [ ];
 
 
 
-class BodyItem extends Basic.Player {     // TODO actually it should be PlayerCharacter, which inherits from Player...??
-    constructor(options) {
+// TODO or should this instead inherit from item, and have a reference to another player object?
+class BodyItem extends Basic.Player {
+    constructor(options, owner) {
         super(options);
-        this.owner = null;  // TODO how do you receive this?
+        this.owner = owner;
     }
 
     //do_verb_for() {
@@ -637,6 +650,11 @@ class DrinkableItem extends WeightedItem {
     }
 }
 
+class Corpse extends WeightedItem {
+    // TODO what's special about a corpse??
+}
+
+
 
 class VendingMachine extends Basic.Thing {
     constructor(options) {
@@ -671,9 +689,9 @@ class VendingMachine extends Basic.Thing {
     get_form_for(player, name) {
         switch (name) {
             case 'purchase':
-                return { label: "What would you like to buy?", fields: [
-
-                ] };
+                return { label: "What would you like to buy?", fields: this.items.map(function (item) {
+                    return { type: 'radio', label: item.name, name: item.id };
+                }), submit: 'Purchase' };
             default:
                 return super.get_form_for(player, name);
         }
