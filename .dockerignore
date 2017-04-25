@@ -1,0 +1,4 @@
+node_modules
+npm-debug.log
+*.vim
+data/objects/backup

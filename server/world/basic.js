@@ -151,6 +151,7 @@ class CorporealBeing extends Being {
             return this.body.title;
         return super.title;
     }
+    set title(v) { super.title = v; }
 
     get brief() {
         if (this.body)

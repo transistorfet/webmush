@@ -170,10 +170,18 @@ const DB = {
 
         try {
             // TODO delete old backups
-            fs.renameSync('data/objects/world.json', 'data/objects/backup/' + Math.floor(Date.now() / 1000) + '-world.json');
-            fs.writeFileSync('data/objects/world.json', output, 'utf8');
+            let backup = fs.readFileSync('data/objects/world.json', 'utf8');
+            if (backup != output)
+                fs.renameSync('data/objects/world.json', 'data/objects/backup/' + Math.floor(Date.now() / 1000) + '-world.json');
+            else
+                console.log('database unchanged');
+        } catch (e) {
+            console.log(e.stack);
         }
-        catch (e) {
+
+        try {
+            fs.writeFileSync('data/objects/world.json', output, 'utf8');
+        } catch (e) {
             console.log(e.stack);
         }
         console.log("Save completed in " + (Date.now() - start) + "ms");

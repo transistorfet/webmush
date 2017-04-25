@@ -49,7 +49,7 @@
       "Wizard"
     ],
     "location": {
-      "$ref": 52
+      "$ref": 49
     },
     "contents": [
       {
@@ -78,7 +78,7 @@
       null
     ],
     "saved_location": {
-      "$ref": 52
+      "$ref": 49
     },
     "description": "A short person with a long white beard and a pointy blue hat.",
     "fullname": "Wizzy The Wizard",
@@ -147,11 +147,49 @@
     },
     "connections": [],
     "saved_location": {
-      "$ref": 52
+      "$ref": 49
     },
     "description": "An anthropormorphic worm with a green hat, and a single big brown boot.",
     "fullname": "Lowely Worm",
-    "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu"
+    "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
+    "body": {
+      "$class": "Body",
+      "gameutils": {
+        "$ref": 68
+      },
+      "owner": {
+        "$ref": 35
+      },
+      "kind": "Cat",
+      "class": "Thief",
+      "state": "alive",
+      "stance": "standing",
+      "level": 1,
+      "xp": 0,
+      "hp": 20,
+      "maxhp": 20,
+      "base_stats": {
+        "str": 8,
+        "dex": 9,
+        "int": 16,
+        "wis": 15,
+        "con": 10,
+        "cha": 6,
+        "luck": 10,
+        "attack": 0,
+        "defense": 10,
+        "damage": [
+          1,
+          8,
+          2
+        ]
+      },
+      "fighting": null,
+      "wimpy": 0.2,
+      "wielding": null,
+      "wearing": {},
+      "coins": 0
+    }
   },
   {
     "$type": "Room",
@@ -400,7 +438,11 @@
     "name": "The Realm",
     "aliases": [],
     "location": null,
-    "contents": [],
+    "contents": [
+      {
+        "$ref": 34
+      }
+    ],
     "exits": [
       {
         "$ref": 56
@@ -478,9 +520,6 @@
       },
       {
         "$ref": 72
-      },
-      {
-        "$ref": 34
       }
     ],
     "exits": [
