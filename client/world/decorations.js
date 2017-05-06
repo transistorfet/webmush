@@ -4,7 +4,7 @@
 const m = require('mithril');
 
 
-let decorations = {
+var decorations = {
     'b': { style: "font-weight: bold;" },
     'i': { style: "font-style: italic;" },
     'red': { style: "color: red;" },
@@ -19,12 +19,12 @@ let decorations = {
 };
 
 const parseDecorations = function (text) {
-    let start = text.match(/^(.*?)<(\w+)(?:\s+(.*?))?>(.*)$/);
+    var start = text.match(/^(.*?)<(\w+)(?:\s+(.*?))?>(.*)$/);
     if (!start)
         return text;
     if (decorations[start[2]]) {
         // TODO parse start[3] arguments
-        let end = start[4].match(new RegExp('^(.*?)<\/' + start[2] + '>(.*)$'));
+        var end = start[4].match(new RegExp('^(.*?)<\/' + start[2] + '>(.*)$'));
         if (!end)
             return [ start[1], m('span', decorations[start[2]], parseDecorations(start[4])) ];
         else

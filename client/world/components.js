@@ -36,7 +36,7 @@ const WorldArea = {
 
 const WorldLogs = {
     onupdate: function (vnode) {
-        let logs = document.getElementById('world-logs');
+        var logs = document.getElementById('world-logs');
         if (logs.scrollTop != logs.scrollHeight)
             logs.scrollTop = logs.scrollHeight;
     },
@@ -82,7 +82,7 @@ const WorldViewLocation = {
         if (!vnode.attrs.location)
             return m(View.Box, { class: 'location' }, "You don't seem to be... anywhere");
 
-        let style = World.view.location.style;
+        var style = World.view.location.style;
         return m(Decorations.Styled, { style: style }, [
             m(View.Box, { class: 'location' + ( style ? ' styled' : '' ) }, [
                 m('span', { class: 'tinylabel' }, "You are in"),
@@ -175,10 +175,10 @@ const WorldVerbList = {
         if (vnode.attrs.item.verbs.length <= 0)
             return [];
 
-        let verbs = [ ];
+        var verbs = [ ];
         verbs.push("(");
         vnode.attrs.item.verbs.forEach(function (verb) {
-            let parts = verb.split(/[\/|]/, 1);
+            var parts = verb.split(/[\/|]/, 1);
             verbs.push(m('a', { onclick: World.doVerb.bind(World, parts[0], vnode.attrs.item) }, parts[0]));
             verbs.push(", ");
         });

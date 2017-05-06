@@ -14,7 +14,7 @@ const Manager = {
 
     view: function (vnode) {
         // TODO if not logged in, then display an alternate message
-        let files = FileInfo.files.filter((file) => { return file.editable; });
+        var files = FileInfo.files.filter((file) => { return file.editable; });
 
         return m('div', { class: 'viewbox' }, [
             FileInfo.error ? m('div', { class: 'error' }, FileInfo.error) : '',
@@ -46,12 +46,12 @@ const Uploader = {
     file: null,
 
     updatePreview: function (files) {
-        let self = this;
+        var self = this;
 
         if (files && files[0]) {
             self.file = files[0];
             console.log("FI", files);
-            let reader = new FileReader();
+            var reader = new FileReader();
             reader.onload = function (e) {
                 console.log("Loaded", e);
                 self.src = e.target.result;
@@ -102,8 +102,8 @@ const Picker = {
     },
 
     view: function (vnode) {
-        let files = FileInfo.list(vnode.attrs.filter);
-        let info = files.find((file) => { return file.path == this.selected[0] });
+        var files = FileInfo.list(vnode.attrs.filter);
+        var info = files.find((file) => { return file.path == this.selected[0] });
 
         return [
             m('select', { onchange: m.withAttr('value', this.change.bind(this, vnode.attrs.onchange, 0)) },
@@ -122,11 +122,11 @@ const Picker = {
 };
 
 const SmallIcon = function (path, subimage) {
-    let icon = path ? path.split('?') : null;
+    var icon = path ? path.split('?') : null;
     if (!icon)
         return m('span', { class: 'small-icon' });
     else if (icon[1] || subimage) {
-        let args = (subimage ? subimage : icon[1]).split('x');
+        var args = (subimage ? subimage : icon[1]).split('x');
         return m('span', { class: 'small-icon', style: 'background-image: url("'+icon[0]+'"); background-position: -'+(args[1]*16)+'px -'+(args[0]*16)+'px;' });
     }
     else if (icon[0])

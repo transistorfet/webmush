@@ -6,9 +6,9 @@ const m = require('mithril');
 const MAX_ERRORS = 6;
 const RECONNECT_TIMEOUT = 3000;
 
-let ws = null;
-let errors = 0;
-let callbacks = {
+var ws = null;
+var errors = 0;
+var callbacks = {
     'open': [ ],
     'msg': [ ],
     'close': [ ],
@@ -73,7 +73,7 @@ const onClose = function (event) {
 };
 
 const onMsg = function (event) {
-    let msg = JSON.parse(event.data);
+    var msg = JSON.parse(event.data);
     callbacks['msg'].map(function (func) {
         func(msg, ws);
     });

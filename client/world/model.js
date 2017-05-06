@@ -69,7 +69,7 @@ const World = {
 
     processInput: function (text) {
         if (text.indexOf('/') == 0) {
-            let [_, cmd, args] = text.trim().match(/^\/(\S*)(?:\s+(.*))?$/);
+            var [_, cmd, args] = text.trim().match(/^\/(\S*)(?:\s+(.*))?$/);
             if (cmd == 'me')
                 websocket.send({ type: 'emote', text: args });
             else
@@ -124,11 +124,11 @@ const Console = {
     input: '',
     history: [ ],
     history_index: 0,
-    store: window.localStorage,
+    //store: window.localStorage,
     //store: window.sessionStorage,
 
     init() {
-        let value = Console.store.getItem('logs');
+        var value = window.localStorage.getItem('logs');
         if (value)
             Console.logs = JSON.parse(value);
     },
@@ -137,7 +137,7 @@ const Console = {
         // TODO you could add support for newline characters in the text string here
         Console.logs.push(text);
         Console.logs = Console.logs.slice(-200);
-        Console.store.setItem('logs', JSON.stringify(Console.logs));
+        window.localStorage.setItem('logs', JSON.stringify(Console.logs));
     },
 
     setInput(value) {
@@ -149,7 +149,7 @@ const Console = {
             return;
 
         if (Console.input.trim() == '/clear') {
-            Console.store.clear('logs');
+            window.localStorage.clear('logs');
             Console.logs = [ ];
         }
         else

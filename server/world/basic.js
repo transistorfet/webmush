@@ -444,7 +444,7 @@ class Player extends CorporealBeing {
                     { name: 'icon', label: 'Avatar', type: 'file', filter: '^image', value: this.icon || '' },
                     { name: 'aliases', label: 'Aliases', type: 'text', value: this.aliases ? this.aliases.join(', ') : '' },
                     { name: 'autoplay', label: 'Audio Autoplay', type: 'checkbox', value: this.prefs.autoplay },
-                    { name: 'email', label: 'Email Address', type: 'text', value: this.email },
+                    { name: 'email', label: 'Email Address', type: 'text', value: this.email || '' },
                     //{ name: 'password_old', label: 'Current Password', type: 'password' },
                     //{ name: 'password_new', label: 'Change Password', type: 'password' },
                     //{ name: 'password_retype', label: 'Retype Password', type: 'password' },

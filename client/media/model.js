@@ -55,7 +55,7 @@ const FileInfo = {
     },
 
     upload: function (file, done) {
-        let form_data = new FormData();
+        var form_data = new FormData();
         form_data.append('image', file, file.name);
 
         m.request({
@@ -78,7 +78,7 @@ const FileInfo = {
             url: '/uploads',
             data: { path: path, name: name },
         }).then(function (response) {
-            let file = this.files.find((item) => { return item.path == path });
+            var file = this.files.find((item) => { return item.path == path });
             if (file)
                 file.name = name;
         }.bind(this)).catch(function (response) {
