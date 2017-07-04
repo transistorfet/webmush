@@ -9,6 +9,8 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 
+process.env.DATA_DIR = process.env.DATA_DIR || 'data';
+process.env.PORT = process.env.PORT || 3000;
 
 let app = express();
 let expressWs = require('express-ws')(app);
@@ -34,15 +36,15 @@ app.ws('/socket', require('./world/connection'));
 
 const media = require('./media');
 app.use('/uploads', requireAuth, media.router);
-app.use('/media', requireAuth, media.allowAccess, express.static('data/media'));
+app.use('/media', requireAuth, media.allowAccess, express.static(path.join(process.env.DATA_DIR, 'media')));
 
 
 app.get('*', function (req, res) {
     res.sendFile(path.normalize(path.join(__dirname, "../index.html")));
 })
 
-app.listen(3000, function () {
-    console.log('app is listening on port 3000!');
+app.listen(process.env.PORT, function () {
+    console.log('app is listening on port ' + process.env.PORT + '!');
 })
 
 module.exports = app;

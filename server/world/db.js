@@ -2,6 +2,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 
 
 let Objects = [ ];
@@ -57,7 +58,7 @@ const DB = {
 
     del_object(obj) {
         Objects[obj.id] = null;
-        //fs.unlinkSync('data/objects/'+this.id+'.json');
+        //fs.unlinkSync(path.join(process.env.DATA_DIR, 'objects/'+this.id+'.json'));
         // TODO also delete media, or at least put it in an attic so that if the id is recycled, the new user can't access old content
         obj.id = -1;
     },
@@ -67,7 +68,7 @@ const DB = {
         console.log("Loading Object DB");
         let start = Date.now();
         try {
-            let data = JSON.parse(fs.readFileSync('data/objects/world.json', 'utf8'));
+            let data = JSON.parse(fs.readFileSync(path.join(process.env.DATA_DIR, 'objects/world.json'), 'utf8'));
             DB.parseData(data, data);
 
             Objects.forEach(function (obj) {
@@ -170,9 +171,9 @@ const DB = {
 
         try {
             // TODO delete old backups
-            let backup = fs.readFileSync('data/objects/world.json', 'utf8');
+            let backup = fs.readFileSync(path.join(process.env.DATA_DIR, 'objects/world.json'), 'utf8');
             if (backup != output)
-                fs.renameSync('data/objects/world.json', 'data/objects/backup/' + Math.floor(Date.now() / 1000) + '-world.json');
+                fs.renameSync(path.join(process.env.DATA_DIR, 'objects/world.json'), path.join(process.env.DATA_DIR, 'objects/backup/' + Math.floor(Date.now() / 1000) + '-world.json'));
             else
                 console.log('database unchanged');
         } catch (e) {
@@ -180,7 +181,7 @@ const DB = {
         }
 
         try {
-            fs.writeFileSync('data/objects/world.json', output, 'utf8');
+            fs.writeFileSync(path.join(process.env.DATA_DIR, 'objects/world.json'), output, 'utf8');
         } catch (e) {
             console.log(e.stack);
         }

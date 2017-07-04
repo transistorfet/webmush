@@ -13,7 +13,7 @@ class MediaDB {
     constructor() {
         this.data = { };
 
-        let files = fs.readdirSync('data/media', 'utf8');
+        let files = fs.readdirSync(path.join(process.env.DATA_DIR, 'media'), 'utf8');
         files.forEach(function (dirname) {
             this.loadData(dirname);
         }.bind(this));
@@ -21,7 +21,7 @@ class MediaDB {
 
     loadData(id) {
         try {
-            this.data[id] = JSON.parse(fs.readFileSync('data/media/'+id+'/metadata.json', 'utf8'));
+            this.data[id] = JSON.parse(fs.readFileSync(path.join(process.env.DATA_DIR, 'media/'+id+'/metadata.json'), 'utf8'));
         }
         catch (e) {
             return e;
@@ -30,7 +30,7 @@ class MediaDB {
 
     saveData(id) {
         try {
-            fs.writeFileSync('data/media/'+id+'/metadata.json', JSON.stringify(this.data[id], undefined, 2), 'utf8');
+            fs.writeFileSync(path.join(process.env.DATA_DIR, 'media/'+id+'/metadata.json'), JSON.stringify(this.data[id], undefined, 2), 'utf8');
         }
         catch (e) {
             console.log(e.stack);
@@ -49,20 +49,20 @@ class MediaDB {
         };
 
         try {
-            fs.accessSync('data/media/'+id, fs.constants.R_OK);
+            fs.accessSync(path.join(process.env.DATA_DIR, 'media/'+id), fs.constants.R_OK);
         }
         catch (e) {
-            fs.mkdir('data/media/'+id, 0o755);
+            fs.mkdir(path.join(process.env.DATA_DIR, 'media/'+id), 0o755);
         }
 
-        fs.renameSync(meta.path, 'data/media/'+id+'/'+meta.filename);
+        fs.renameSync(meta.path, path.join(process.env.DATA_DIR, 'media/'+id+'/'+meta.filename));
         setTimeout(() => { this.saveData(id); }, 0);
     }
 
     deleteMedia(id, filename) {
         if (!this.data[id][filename])
             return false;
-        fs.unlinkSync('data/media/'+id+'/'+filename);
+        fs.unlinkSync(path.join(process.env.DATA_DIR, 'media/'+id+'/'+filename));
         delete this.data[id][filename];
         this.saveData(id);
         console.log("BAWLETED", id, '/', filename);
@@ -116,7 +116,7 @@ let db = new MediaDB();
 
 
 let router = express.Router();
-let upload = multer({ dest: 'data/uploads/' });
+let upload = multer({ dest: path.join(process.env.DATA_DIR, 'uploads/') });
 
 router.get('', function (req, res, next) {
     if (!req.user || !req.user.player)
