@@ -50,6 +50,7 @@ const WorldLogs = {
 
 const WorldInput = {
     checkEnter: function (e) {
+        World.console.typing();
         if (e.key == 'Enter')
             World.console.onInput();
         else if (e.key == 'ArrowUp')
@@ -165,6 +166,7 @@ const WorldViewContents = {
                 m('td', Media.SmallIcon.call(this, item.icon)),
                 m('td', m('a', { onclick: World.look.bind(World, item.name) }, item.brief ? item.brief : item.title)),
                 m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
+                item.typing ? m('img', { class: 'small-icon', src: '/media/default/img/indicator.gif' }) : '',
             ]);
         }));
     },

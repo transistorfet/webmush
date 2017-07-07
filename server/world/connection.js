@@ -77,6 +77,14 @@ const onMsg = function (ws, msg)
     if (msg.type == 'connect') {
         args.player.update_view();
     }
+    else if (msg.type == 'typing') {
+        // TODO send update to other users
+        console.log(args.player.name, " is ", msg.value ? "" : "not ", "typing");
+        args.player.location.contents.map(function (obj) {
+            if (obj.tell_msg && obj != args.player)
+                obj.tell_msg({ type: 'typing', id: args.player.id, value: msg.value });
+        });
+    }
     else if (msg.type == 'say') {
         args.player.location.say(args);
     }

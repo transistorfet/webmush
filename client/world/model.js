@@ -27,6 +27,15 @@ const World = {
         if (msg.type == 'log') {
             Console.log(msg.text);
         }
+        else if (msg.type == 'typing') {
+            console.log(msg.id, msg.value ? 'is typing' : 'is not typing');
+            if (!World.view || !World.view.location)
+                return;
+            World.view.location.contents.map(function (obj) {
+                if (obj.id == msg.id)
+                    obj.typing = msg.value;
+            });
+        }
         else if (msg.type == 'update') {
             if (msg.player)
                 World.view.player = msg.player;
@@ -116,12 +125,18 @@ const World = {
     sendCancel: function (prompt) {
         websocket.send({ type: 'respond', id: prompt.id, respond: prompt.respond, cancel: true, seq: prompt.seq });
     },
+
+    updateTyping: function (value) {
+        websocket.send({ type: 'typing', value: value });
+    },
 };
 
 
 const Console = {
     logs: [ ],
     input: '',
+    isTiming: null,
+    isTyping: false,
     history: [ ],
     history_index: 0,
     //store: window.localStorage,
@@ -142,6 +157,24 @@ const Console = {
 
     setInput(value) {
         Console.input = value;
+    },
+
+    typing() {
+        if (Console.isTiming)
+            clearTimeout(Console.isTiming);
+
+        if (!Console.isTyping) {
+            console.log("Typing");
+            World.updateTyping(true);
+        }
+        Console.isTyping = true;
+
+        Console.isTiming = setTimeout(function () {
+            Console.isTiming = null;
+            Console.isTyping = false;
+            console.log("Not Typing");
+            World.updateTyping(false);
+        }, 3000);
     },
 
     onInput(value) {
