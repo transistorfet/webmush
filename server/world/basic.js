@@ -69,8 +69,8 @@ Thing.prototype.description = "You aren't sure what it is.";
 
 
 class Being extends Thing {
-    constructor(options) {
-        super(options);
+    initialize(options) {
+        super.initialize(options);
         this.canfollow = false;
         this.following = null;
     }
@@ -146,6 +146,12 @@ class Being extends Thing {
 
 
 class CorporealBeing extends Being {
+    onLoad() {
+        if (this.body)
+            return this.body.onLoad();
+        return super.onLoad();
+    }
+
     get title() {
         if (this.body)
             return this.body.title;
@@ -203,7 +209,10 @@ class Player extends CorporealBeing {
     constructor(options) {
         super(options);
         Player.allPlayers.push(this);
+    }
 
+    initialize(options) {
+        super.initialize(options);
         this.isWizard = false;
         this.position = 'standing';
         this.canfollow = true;
@@ -216,6 +225,7 @@ class Player extends CorporealBeing {
 
         this.connections = [ ];
         this.saved_location = null;
+
         this.moveto(DB.get_object(Player.limbo), 'force');
     }
 
@@ -489,8 +499,8 @@ Player.allPlayers = [ ];
 
 
 class Room extends Thing {
-    constructor(options) {
-        super(options);
+    initialize(options) {
+        super.initialize(options);
         this.exits = [ ];
         this.locked = false;
     }
@@ -706,8 +716,8 @@ class Room extends Thing {
 }
 
 class Exit extends Thing {
-    constructor(options) {
-        super(options);
+    initialize(options) {
+        super.initialize(options);
         this.source = null;
         this.dest = null;
         this.hasDoor = false;

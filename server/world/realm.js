@@ -92,6 +92,7 @@ function reinitRealmObjects(id) {
     goat.name = 'A Goat';
     goat.body.state = 'alive';
     goat.body.hp = goat.body.maxhp;
+    goat.body.respawntime = 300000;
     goat.moveto(DB.get_object(52), 'force');
 
 

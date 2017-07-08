@@ -4,6 +4,11 @@
     "mimetype": "text/css",
     "public": true
   },
+  "theme/dark.css": {
+    "name": "theme/dark.css",
+    "mimetype": "text/css",
+    "public": true
+  },
   "font/IndieFlower.tff": {
     "name": "Indie Flower",
     "mimetype": "application/x-font-ttf",

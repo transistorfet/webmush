@@ -1,0 +1,59 @@
+
+body,
+button,
+input {
+    background-color: #333;
+    color: #bbb;
+}
+
+a:visited {
+    color: #b4ea6a;
+}
+
+.viewbox {
+    border-color: #ddd;
+}
+
+.navbar li a {
+  background-color: #333;
+  color: #ddd;
+}
+
+#world-logs {
+    background-color: #555;
+}
+
+
+
+#world-area .viewbox:not(.styled) .title {
+    color: #3a8ecd;
+}
+
+#world-area .viewbox:not(.styled) .description {
+    color: #30b030;
+}
+
+#world-logs .status {
+    color: #660066;
+}
+
+#world-logs .chat {
+    color: #3a8ecd;
+}
+
+#world-logs .shout {
+    color: #c00404;
+}
+
+#world-logs .action {
+    color: #30b030;
+}
+
+#world-logs .attack {
+    color: #d0a000;
+}
+
+#world-logs .defense {
+    color: #801010;
+}
+

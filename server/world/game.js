@@ -9,7 +9,6 @@ const Strings = require('../../lib/strings');
 
 
 class GameUtils extends Root {
-
     onLoad() {
         DB.define(this.name, this);
     }
@@ -35,9 +34,7 @@ class GameUtils extends Root {
             if (!this.check_form(args, 'create'))
                 return;
 
-            args.player.body = new Body({}, this, args.player);
-            // TODO move the actual character creation to the initialize step instead of the constructor, so loading doesn't recreated a character only to be overwritten
-            args.player.body.initialize({ kind: args.response.kind, class: args.response.class });
+            args.player.body = new Body({ kind: args.response.kind, class: args.response.class, gameutils: this, owner: args.player });
             args.player.tell("You've created a new character!");
             args.player.location.update_contents();
         }
@@ -59,8 +56,7 @@ class GameUtils extends Root {
     create_npc(options) {
         // TODO this is now wrong
         let npc = new Basic.CorporealBeing({}, this);
-        npc.body = new Body({}, this, npc);
-        npc.body.initialize({ kind: options.kind || 'Goat', class: options.class || 'Fighter' });
+        npc.body = new Body({ kind: options.kind || 'Goat', class: options.class || 'Fighter', gameutils: this, owner: npc });
         return npc;
     }
 
@@ -111,13 +107,22 @@ add all effects to base stats to get current stats
 
 
 class Body {
-    constructor(options, gameutils, owner) {
+    constructor(options) {
+        if (!options) {
+            console.log("Attempted to create body without data");
+            return;
+        }
+
         Body.list.push(this);
-        this.gameutils = gameutils;
-        this.owner = owner;
+        this.gameutils = options.gameutils;
+        this.owner = options.owner;
+        // TODO do you need to set mode here?
+        this.initialize(options);
     }
 
     initialize(options) {
+        if (options.$mode == 'load')
+            return;
         // TODO this is for when you create a new object and want to specify how to initialize it;
         this.kind = options.kind;
         this.class = options.class;
@@ -135,6 +140,15 @@ class Body {
         this.wielding = null;
         this.wearing = { };
         this.coins = 0;
+    }
+
+    onLoad() {
+        this.fighting = null;
+    }
+
+    duplicate(options, owner) {
+        let body = new Body(options, this.gameutils, owner);
+        // TODO can't assign because these will be overwritten
     }
 
     get_view(player) {
@@ -237,7 +251,7 @@ class Body {
     }
 
     make_stats(kindname, classname) {
-        let kind = DB.Named.RealmUtils.kinds.find((kind) => { return kind.name == kindname });
+        let kind = this.gameutils.kinds.find((kind) => { return kind.name == kindname });
         return {
             str: GameUtils.roll(3, 6),
             dex: GameUtils.roll(3, 6),
@@ -310,6 +324,8 @@ class Body {
 
     die() {
         this.state = 'dead';
+        this.lastdeath = Date.now();
+        Corpse.make_for(this);
     }
 
 
@@ -374,12 +390,16 @@ class Body {
                 verbs.push('stand');
             if (this.stance != 'sitting' || all)
                 verbs.push('sit');
+            if (this.state == 'dead' || all)
+                verbs.push('respawn');
         }
-        if (player.body && player.location.allowfighting && (this.state == 'alive' || all)) {
-            if (player.body.fighting != this.owner || all)
-                verbs.push('fight/kill|this');
-            if (player.body.fighting == this.owner || all)
-                verbs.push('flee/stop/runaway');
+        else {
+            if (player.body && player.location.allowfighting && (this.state == 'alive' || all)) {
+                if (player.body.fighting != this.owner || all)
+                    verbs.push('fight/kill|this');
+                if (player.body.fighting == this.owner || all)
+                    verbs.push('flee/stop/runaway');
+            }
         }
         return verbs;
     }
@@ -393,6 +413,8 @@ class Body {
             args.player.tell("You can't fight yourself, silly.");
         else if (!(args.dobj instanceof Basic.CorporealBeing) || !args.dobj.body)
             args.player.tell(args.player.format("You can't fight {dobj.title}.", args));
+        else if (args.player.body.state != 'alive')
+            args.player.tell(args.player.format("You can't fight if you're not alive.", args));
         else if (args.dobj.body.state != 'alive')
             args.player.tell(args.player.format("You can't fight someone who's not alive.", args));
         else if (args.player.location != args.dobj.location)
@@ -428,6 +450,21 @@ class Body {
             args.player.location.tell_all_but([ args.player, opponent ], args.player.format("<action>{this.title} runs away from {title}!", opponent));
 
             args.player.update_view('location');
+        }
+    }
+
+    respawn(args) {
+        if (this.state == 'alive')
+            args.player.tell("You are already alive");
+        else {
+            // TODO this is temporary; it should transfer you to heaven or something, or punish you somehow for dying
+            this.state = 'alive';
+
+            args.player.tell(args.player.format("<action>You spring back to life.", args));
+            args.player.location.tell_all_but(args.player, args.player.format("<action>{player.title} springs back to life.", args));
+
+            args.player.update_view('player,body');
+            args.player.location.update_contents();
         }
     }
 
@@ -488,6 +525,12 @@ Body.list = [ ];
             body.update_stats();
             fightingBodies.push([ body, body.roll_initiative() ]);
         }
+
+        if (!(body.owner instanceof Basic.Player) && body.state == 'dead' && body.respawntime && (body.lastdeath + body.respawntime < start)) {
+            body.state = 'alive';
+            body.owner.location.tell_all_but(null, body.owner.format("<action>{this.title} springs back to life."));
+            body.owner.location.update_contents();
+        }
     }
 
     // Determine initiative order
@@ -513,7 +556,8 @@ Body.list = [ ];
             opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} hits you with their fist!", body));
         }
         else {
-            body.owner.tell(body.owner.format("<attack>You KILLED {owner.title}!!! How could you!?", opponentbody));
+            // TODO i'm using name here instead of title because it would say Ghost of soandso... maybe should do win/die after this??
+            body.owner.tell(body.owner.format("<attack>You KILLED {owner.name}!!! How could you!?", opponentbody));
             opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} has killed you... you are now dead", body));
         }
 
@@ -529,10 +573,10 @@ Body.list = [ ];
 
 
 // TODO or should this instead inherit from item, and have a reference to another player object?
-class BodyItem extends Basic.Player {
-    constructor(options, owner) {
-        super(options);
-        this.owner = owner;
+class BodyItem extends Basic.Item {
+    initialize(options) {
+        super.initialize(options);
+        this.owner = options.owner;
     }
 
     //do_verb_for() {
@@ -553,9 +597,27 @@ class BodyItem extends Basic.Player {
 
 
 class WeightedItem extends Basic.Item {
-    constructor(options) {
-        super(options);
+    initialize(options) {
+        super.initialize(options);
         this.weight = 0;
+    }
+
+    moveable(to, by) {
+        if (to.isWizard)
+            return true;
+        if (!to.body)
+            throw "You must have a physical body in order to interact with physical objects";
+        if (to.body.state != 'alive')
+            throw "You must be alive in order to pick that up.";
+
+        let carrying = to.contents.reduce(function (acc, obj) {
+            if (obj instanceof WeightedItem)
+                acc += obj.weight;
+            return acc;
+        }, 0);
+
+        if (100 - carrying < this.weight)
+            throw this.format("You attempt to lift {name} but it wont budge.", obj);
     }
 
     editable_by(player) {
@@ -586,8 +648,8 @@ class WearableItem extends WeightedItem {
 
 
 class WieldableItem extends WeightedItem {
-    constructor(options) {
-        super(options);
+    initialize(options) {
+        super.initialize(options);
         this.damage = [ 1, 4, 0 ];
     }
 
@@ -650,15 +712,64 @@ class DrinkableItem extends WeightedItem {
     }
 }
 
+
 class Corpse extends WeightedItem {
-    // TODO what's special about a corpse??
+    initialize(options) {
+        super.initialize(options);
+        this.weight = 100;      // TODO calculate from kind info?
+        Corpse.list.push(this);
+    }
+
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        if (player.body && player.body.state == 'alive')
+            verbs.push('sacrifice');
+        return verbs;
+    }
+
+    sacrifice(args) {
+        this.location.tell_all_but(args.player, this.format("<action>{player.title} sacrifices {this.title} to the gods", args));
+        args.player.tell(this.format("<action>You sacrifice {this.title} to the gods", args));
+        Corpse.list = Corpse.list.filter((corpse) => { return corpse != this; });
+        this.recycle();
+    }
+
+    static make_for(body) {
+        let corpse = new Corpse();
+        corpse.owner = body.owner;
+        corpse.name = 'Corpse of ' + body.owner.name;
+        corpse.timeofdeath = Date.now();
+        let items = body.owner.contents.filter((obj) => { return obj instanceof WeightedItem; });
+        items.map(function (obj) {
+            obj.moveto(corpse, 'force');
+        });
+        corpse.moveto(body.owner.location, 'force');
+        return corpse;
+    }
 }
+Corpse.list = [ ];
+
+(function CorpseRecycler() {
+    let start = Date.now();
+    Corpse.list = Corpse.list.filter(function (corpse) {
+        if (start - corpse.timeofdeath > 3600000) {
+            // TODO move items to the lost and found??
+            corpse.location.tell_all_but(null, corpse.format("{this.name} decays into dust."));
+            corpse.recycle();
+            return false;
+        }
+        else
+            return true;
+    });
+
+    setTimeout(CorpseRecycler, 60000);
+})();
 
 
 
 class VendingMachine extends Basic.Thing {
-    constructor(options) {
-        super(options);
+    initialize(options) {
+        super.initialize(options);
         this.items = [ ];
     }
 
@@ -708,5 +819,6 @@ module.exports = {
     EdibleItem,
     DrinkableItem,
     VendingMachine,
+    Corpse,
 };
 

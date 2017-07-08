@@ -1,5 +1,5 @@
-[
-  {
+{
+  "32": {
     "$type": "Room",
     "id": 32,
     "name": "Limbo",
@@ -18,7 +18,7 @@
     "description": "You are floating in a void of blackness.  You cannot make out anything.",
     "onLoad": "function () { DB.define('Limbo', this); }"
   },
-  {
+  "33": {
     "$type": "Room",
     "id": 33,
     "name": "The Lobby",
@@ -41,7 +41,7 @@
     "description": "You are in an empty hotel lobby.  There isn't anything here yet",
     "onLoad": "function () { DB.define('Lobby', this); }"
   },
-  {
+  "34": {
     "$type": "Player",
     "id": 34,
     "name": "Wizzy",
@@ -66,7 +66,7 @@
     "prefs": {
       "autoplay": true,
       "theme": {
-        "cssfile": "/media/default/theme/world.css",
+        "cssfile": "/media/default/theme/dark.css",
         "background": "",
         "font": "",
         "box": "",
@@ -83,7 +83,7 @@
     "description": "A short person with a long white beard and a pointy blue hat.",
     "fullname": "Wizzy The Wizard",
     "password": "$2a$10$Xgg6g4inK/qzcPUtPC40x..vNyDw7z3R/tveviQmquFEi1PnbeIlu",
-    "icon": "/media/default/img/icons.png?12x6",
+    "icon": "/media/default/img/icons.png?11x6",
     "body": {
       "$class": "Body",
       "gameutils": {
@@ -97,7 +97,7 @@
       "state": "alive",
       "stance": "standing",
       "level": 1,
-      "xp": 2562,
+      "xp": 4575,
       "hp": 20,
       "maxhp": 20,
       "base_stats": {
@@ -123,10 +123,11 @@
       },
       "wearing": {},
       "coins": 0,
-      "stats": null
+      "stats": null,
+      "lastdeath": 1499548784056
     }
   },
-  {
+  "35": {
     "$type": "Player",
     "id": 35,
     "name": "Lowely",
@@ -147,7 +148,7 @@
     },
     "connections": [],
     "saved_location": {
-      "$ref": 49
+      "$ref": 52
     },
     "description": "An anthropormorphic worm with a green hat, and a single big brown boot.",
     "fullname": "Lowely Worm",
@@ -191,7 +192,7 @@
       "coins": 0
     }
   },
-  {
+  "36": {
     "$type": "Room",
     "id": 36,
     "name": "The Coat Check",
@@ -206,7 +207,7 @@
     "locked": false,
     "description": "There is a counter here for checking your coats and belongings, but no one as behind the counter."
   },
-  {
+  "37": {
     "$type": "Exit",
     "id": 37,
     "name": "west",
@@ -222,7 +223,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "38": {
     "$type": "Exit",
     "id": 38,
     "name": "east",
@@ -238,7 +239,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "39": {
     "$type": "Item",
     "id": 39,
     "name": "Doohickey",
@@ -249,7 +250,7 @@
     "contents": [],
     "description": "It's a general purpose tool for anything you want."
   },
-  {
+  "40": {
     "$type": "UseableItem",
     "id": 40,
     "name": "The Party Button",
@@ -263,7 +264,7 @@
     "msg_use_you": "You press the party button.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying.",
     "msg_use_others": "{player.title} pulls out a big button and presses it.  <b><red>It explodes into a burst of lights and music;</b> <green>a disc ball decends from the ceiling and everybody starts partying."
   },
-  {
+  "41": {
     "$type": "Being",
     "id": 41,
     "name": "Ducky",
@@ -278,7 +279,7 @@
     "onLoad": "function () { this.annoy() }",
     "annoy": "function (args) {\n        setTimeout(function () {\n            if (this.location)\n                this.location.say({ player: this, text: \"Quack \".repeat(1 + Math.floor(Math.random() * 3)).trim() });\n            this.annoy();\n        }.bind(this), 30000 + Math.random() * 30000);\n    }"
   },
-  {
+  "42": {
     "$type": "Room",
     "id": 42,
     "name": "The Elevators",
@@ -316,7 +317,7 @@
       "description": ""
     }
   },
-  {
+  "43": {
     "$type": "Exit",
     "id": 43,
     "name": "north",
@@ -332,7 +333,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "44": {
     "$type": "Exit",
     "id": 44,
     "name": "Ground",
@@ -348,7 +349,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "45": {
     "$type": "Player",
     "id": 45,
     "name": "yoy",
@@ -376,7 +377,7 @@
     "password": "$2a$10$8g2urm7YjH.OT3nY7/ZL5uRWarGYsVJAViS8W1L5v3EF7fugyhljK",
     "email": ""
   },
-  {
+  "46": {
     "$type": "Room",
     "id": 46,
     "name": "The Lounge",
@@ -400,7 +401,7 @@
       "description": ""
     }
   },
-  {
+  "47": {
     "$type": "Exit",
     "id": 47,
     "name": "Floor 1",
@@ -416,7 +417,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "48": {
     "$type": "Exit",
     "id": 48,
     "name": "down",
@@ -432,7 +433,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "49": {
     "$type": "Room",
     "id": 49,
     "name": "The Realm",
@@ -467,7 +468,7 @@
     "audio": "",
     "audio_loop": false
   },
-  {
+  "50": {
     "$type": "Exit",
     "id": 50,
     "name": "Floor 2",
@@ -483,7 +484,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "51": {
     "$type": "Exit",
     "id": 51,
     "name": "down",
@@ -499,7 +500,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "52": {
     "$type": "Room",
     "id": 52,
     "name": "The Body Shop",
@@ -542,7 +543,7 @@
     },
     "audio": ""
   },
-  {
+  "53": {
     "$type": "Exit",
     "id": 53,
     "name": "east",
@@ -558,7 +559,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "54": {
     "$type": "Exit",
     "id": 54,
     "name": "west",
@@ -574,7 +575,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "55": {
     "$type": "Room",
     "id": 55,
     "name": "Turnstiles",
@@ -589,7 +590,7 @@
     "locked": false,
     "description": "You aren't sure what it is."
   },
-  {
+  "56": {
     "$type": "Exit",
     "id": 56,
     "name": "north",
@@ -607,7 +608,7 @@
     "is_blocked": "function (player) { if (!player.body) return true; return this.constructor.prototype.is_blocked(player); }",
     "msg_blocked_you": "You must create a character at the body shop before you can enter the realm."
   },
-  {
+  "57": {
     "$type": "Exit",
     "id": 57,
     "name": "south",
@@ -623,7 +624,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "58": {
     "$type": "Being",
     "id": 58,
     "name": "Shopkeeper",
@@ -639,7 +640,7 @@
     "create": "function (args) { DB.Named.RealmUtils.create(args); }",
     "icon": "/media/default/img/icons.png?10x6"
   },
-  {
+  "59": {
     "$type": "Room",
     "id": 59,
     "name": "Hotel Rooms",
@@ -654,7 +655,7 @@
     "locked": false,
     "description": "There is nothing here at the moment.  It will likely be a place for user-owned rooms"
   },
-  {
+  "60": {
     "$type": "Exit",
     "id": 60,
     "name": "Floor 3",
@@ -670,7 +671,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "61": {
     "$type": "Exit",
     "id": 61,
     "name": "down",
@@ -686,7 +687,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "62": {
     "$type": "Room",
     "id": 62,
     "name": "The Control Tower",
@@ -710,7 +711,7 @@
     },
     "description": "You are in an aircraft control tower looking out onto airport runways busy with airplanes taking off and landing.  The chatter of air traffic control can be heard in the background."
   },
-  {
+  "63": {
     "$type": "Exit",
     "id": 63,
     "name": "Floor 4",
@@ -726,7 +727,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "64": {
     "$type": "Exit",
     "id": 64,
     "name": "down",
@@ -742,7 +743,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "65": {
     "$type": "Room",
     "id": 65,
     "name": "The Penthouse",
@@ -757,7 +758,7 @@
     "locked": false,
     "description": "The place is a ransacked mess.  During the revolution against the 1%, the original owners were tar and feathered in the streets, and their possessions were looted.  Not much is left here.  How about you start a party in the ruined ashes."
   },
-  {
+  "66": {
     "$type": "Exit",
     "id": 66,
     "name": "Penthouse",
@@ -773,7 +774,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "67": {
     "$type": "Exit",
     "id": 67,
     "name": "down",
@@ -789,7 +790,7 @@
     "hasDoor": false,
     "isOpen": true
   },
-  {
+  "68": {
     "$type": "GameUtils",
     "id": 68,
     "name": "RealmUtils",
@@ -883,7 +884,7 @@
       }
     ]
   },
-  {
+  "69": {
     "$type": "CorporealBeing",
     "id": 69,
     "name": "A Goat",
@@ -907,7 +908,7 @@
       "state": "alive",
       "stance": "standing",
       "level": 1,
-      "xp": 183,
+      "xp": 549,
       "maxhp": 20,
       "base_stats": {
         "str": 15,
@@ -931,10 +932,12 @@
       "wearing": {},
       "coins": 0,
       "stats": null,
-      "hp": 20
+      "hp": 20,
+      "respawntime": 300000,
+      "lastdeath": 1499548744037
     }
   },
-  {
+  "70": {
     "$type": "WieldableItem",
     "id": 70,
     "name": "sword",
@@ -950,7 +953,7 @@
       1
     ]
   },
-  {
+  "71": {
     "$type": "Container",
     "id": 71,
     "name": "magic bag",
@@ -963,7 +966,7 @@
     "contents": [],
     "description": "It's a magical bag that can hold anything!"
   },
-  {
+  "72": {
     "$type": "VendingMachine",
     "id": 72,
     "name": "vending machine",
@@ -981,4 +984,4 @@
     ],
     "description": "A vending machine with all sorts of goodies inside."
   }
-]
+}

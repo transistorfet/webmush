@@ -1,14 +1,23 @@
 
-* new verbs, chess mechanism, permissions system, fix language, visibility, refactor
+* there might be an issue with cloning and initialization... maybe you want to check and not change values for most things in case of clone, only new/load
+
+* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
+* the text for moving from room to room is totally messed up if it's not the typical exits
+* custom messages for attacking, look at lpmud/discworld code
+
+* you need an automatic way of update data on the clients, maybe a pub/sub thing?  but can we avoid using an external db/mqtt broker?
+* when you change a value of an object in details, it doesn't update the details view, even though the value changed
+* add builder permissions, so they can build but not do anything (how will permissions work?)
+
+
+
+* new verbs, chess mechanism, permissions system, fix language
  
 * multiple games; but how do you keep items separate between them?
 * maybe use es5 prototypes instead of es6 classes???
 * should the garbage collection phase be separate from saving?
-* delete old backups so they don't multiply
-* reuse object ids when allocating new objects
 * you could make verbs into a class, which has the function, the args string, and the help, and it would automatically do the rest.  The issue is
   how would you find the verbs on the object since keys() wont work...; you might have to go to es5 classes for this anyways
-* you need an automatic way of update data on the clients, maybe a pub/sub thing?  but can we avoid using an external db/mqtt broker?
 
 * add notifications for activity in the current room, and maybe a way to filter only certain events
 * add support for dot names in attributes, so that you can edit 'style.icon', etc
@@ -23,7 +32,6 @@
 
 * make input autofocus
 * further refactor console code? do you want to mix models and components?
-* make data dir selectable through an environment variable?
 
 * add form generation functions??
 * add a way to add data to a form without using a hidden field; just an attribute on the prompt object
@@ -32,40 +40,32 @@
 * add public flag to uploads
 * add image editor (client side?) that allows you to resize, pan, zoom, etc
 
-* add builder permissions, so they can build but not do anything (how will permissions work?)
 * make room customize css textarea only accessible to certain wizard users (maybe a distinction between wizard and builder?)
-
-* expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
 
 * add a feedback system to prompt, so that it can send back info and get a response that updates the prompt, and you could use this
   to implement a chess type game, where you make a move, and it updates the view with the new positions
 * do you want to change the way you do server side templates?  right now it's an encoded function which works but... yeah
 * could you highlight stats that change, like during combat when your hit, your hp flashes red with the new number
-* implement body-as-an-item; so that you're non-bodied player isn't effected by having a body; maybe selectable during body creation?
 
 
 
-* custom messages for attacking, look at lpmud/discworld code
-* go through all uses of format() and regularize them as much as possible
-* you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
-* the text for moving from room to room is totally messed up if it's not the typical exits
-
-* what about initialization... can you factor all the constructor stuff out and into initialize/onLoad?
-* partially implement verb thing, except for verbs_for() function??
-* implement death; you'll need to create a corpse object which is separate from the being's body
-
-
+* move to random ids, maybe alphanumeric ids?
+* respawning must move you to heaven instead of leaving you where you are
 
 * implement vending machine
-* invisible flag, or is_visible() function, which is checked when displaying contents of a room; then monsters could die and hide themselves without moving
+* make it possible to sacrifice to a specific god and give different rewards for each
 
-* add typing indicator, for chatting? make it easy to talk to someone who walks away
-* add means of talking to someone who's moving around
+* add means of talking to someone who's moving around, ooc/aethertalk/channels/etc
 * represent exits visually, by arranging them in the correct directions; maybe even an indicator of which direction you came from last
 * add a back command so you can easily go back to where you were, or make it work with back buttons
+* implement body-as-an-item; so that you're non-bodied player isn't effected by having a body; maybe selectable during body creation?
+* go through all uses of format() and regularize them as much as possible
 
-* when you change a value of an object in details, it doesn't update the details view, even though the value changed
+* expanded help system, with see also:, mechanics explaination, etc; should it be on the objects themselves, maybe it a big function, or on a help object?
 
+
+ISSUES:
+    * is the typing indicator too performance heavy?  Can it be dampened?  I'm worried that high traffic use would overload the server unless throttled
 
 
 COMMANDS:
@@ -138,5 +138,6 @@ IDEAS:
       character to enter limbo, and you effectively sudo to the Body object; the connection ws.player object points to the body object.  It would then have to forward commands to
       its 'owner', which is the player character.  The Body object would be taken out of limbo and placed in the real world.  There would be no way to transfer objects or players/beings
       outside of their respective worlds...  There then becomes a clear delineation between the cloud world and the realm world (or the wasteland)
+    * a morgue where you can buy back your body for a fee, and get all your items
 
 

@@ -46,8 +46,15 @@ const World = {
                     window.history.pushState({ id: msg.location.id }, 'previous_location');
                 World.view.location = msg.location;
             }
-            if (msg.body)
+            if (msg.body) {
+                World.view.body_diff = {};
+                if (World.view.body) {
+                    for (let key in msg.body)
+                        if (msg.body[key] != World.view.body[key])
+                            World.view.body_diff[key] = true;
+                }
                 World.view.body = msg.body;
+            }
             if (msg.body_template)
                 World.view.body_template = eval("(" + msg.body_template + ")");
         }

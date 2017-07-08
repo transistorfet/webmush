@@ -10,26 +10,31 @@ const Error = require('../error');
 
 class Root {
     constructor(options) {
-        DB.set_object(options ? options.id : undefined, this);
+        if (!options)
+            options = { };
+        if (!options.$mode)
+            options.$mode = 'new';
+
+        DB.set_object(options.$id !== undefined ? options.$id : undefined, this);
+        if (!options.$noinit)
+            this.initialize(options);
+    }
+
+    initialize(options) {
         this.name = "unnamed object";
         this.aliases = [];
         this.location = null;
         this.contents = [];
 
-        if (options && options.cloning) {
-            this.name = options.cloning.name;
-            this.aliases = options.cloning.aliases.slice(0);
+        if (options.$cloning) {
+            this.name = options.$cloning.name;
+            this.aliases = options.$cloning.aliases.slice(0);
         }
-    }
-
-    initialize(options) {
-        // do nothing
     }
 
     /*
     static create(args) {
         let obj = new this.constructor();
-        //obj.initialize();
         if (args && args.player)
             args.player.tell(this.format("New object created: #{id} {name}", obj));
         return obj;
@@ -37,9 +42,9 @@ class Root {
     */
 
     clone(args) {
-        let obj = new this.constructor({ cloning: this });      // cloning allows any constructors to choose to copy over attributes
+        let obj = new this.constructor({ $noinit: true });
         Object.setPrototypeOf(obj, this);
-        //obj.initialize();
+        obj.initialize({ $mode: 'clone', $cloning: this });
         if (args && args.player)
             args.player.tell(this.format("Object cloned as: #{id} {name}", obj));
         return obj;
@@ -47,6 +52,7 @@ class Root {
 
     recycle() {
         //this.id = -1;
+        this.moveto(null, 'force');
         this.recycle = true;
     }
 
@@ -152,10 +158,12 @@ class Root {
             oldLocation.contents = oldLocation.contents.filter((item) => { return item != this });
             oldLocation.update_contents();
         }
-        location.contents.push(this);
         this.location = location;
-        location.update_contents();
-        console.log("Moved", this.id, "to", this.location.id);
+        if (location) {
+            location.contents.push(this);
+            location.update_contents();
+        }
+        console.log("Moved", this.id, "to", this.location ? this.location.id : 'null');
         return true;
     }
 
