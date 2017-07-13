@@ -9,19 +9,6 @@ class Validation extends Error {
     }
 };
 
-class Response {
-    constructor(you, them, others) {
-        if (others === undefined) {
-            others = them;
-            them = undefined;
-        }
-
-        this.you = you;
-        this.them = them;
-        this.others = others;
-    }
-};
-
 module.exports = {
     Validation,
 };
