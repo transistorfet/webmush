@@ -8,11 +8,58 @@ const Response = require('./response');
 
 const Strings = require('../../lib/strings');
 
+const GenericKind = {
+    name: "Generic Kind",
+    info: "Not much is known about these creatures",
+    playable: false,
+    size: "80-140",
+    attack: 0,
+    defense: 10,
+    damage: [1, 4, 0],
+    attackmsgs: [
+        new Response(
+            "<attack>You hit {dobj.title}",
+            "<defense>{player.title} hits",
+            "<action>{player.title} hits {dobj.title}"
+        ),
+    ],
+};
+
+const GenericClass = {
+    name: "Generic Class",
+    playable: false,
+};
+
 
 class GameUtils extends Root {
+    constructor(options) {
+        super(options);
+        this.kinds = [ ];
+        this.classes = [ ];
+    }
+
     onLoad() {
         DB.define(this.name, this);
     }
+
+    add_kind(kind) {
+        Object.setPrototypeOf(kind, kind.prototype || GenericKind);
+        let i = this.kinds.findIndex((k) => { return k.name == kind.name });
+        if (i >= 0)
+            this.kinds[i] = kind;
+        else
+            this.kinds.push(kind);
+    }
+
+    add_class(cls) {
+        Object.setPrototypeOf(cls, cls.prototype || GenericClass);
+        let i = this.classes.findIndex((c) => { return c.name == cls.name });
+        if (i >= 0)
+            this.classes[i] = cls;
+        else
+            this.classes.push(cls);
+    }
+
 
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);

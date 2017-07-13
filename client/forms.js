@@ -115,7 +115,8 @@ const FieldList = {
             }
             else {
                 return m('tr', [
-                    m('td', { colspan: '100%' }, Field.call(this, item, vnode.attrs.response)),
+                    m('td', !info ? { colspan: '100%' } : undefined, Field.call(this, item, vnode.attrs.response)),
+                    info ? m('td', m('div', { class: 'option-info' }, info)) : '',
                 ]);
             }
         }.bind(this)));

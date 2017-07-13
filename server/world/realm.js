@@ -116,8 +116,12 @@ const Classes = [
 function reinitRealmObjects(id) {
     let realm = DB.get_object(id++) || new DB.Classes.GameUtils();
     realm.name = 'RealmUtils';
-    realm.kinds = Kinds;
-    realm.classes = Classes;
+    realm.kinds = [ ];
+    realm.classes = [ ];
+    Kinds.forEach((kind) => { realm.add_kind(kind); });
+    Classes.forEach((cls) => { realm.add_class(cls); });
+
+
 
     let goat = DB.get_object(id++) || realm.create_npc({ kind: 'Goat', class: 'Fighter' });
     goat.name = 'a goat';
