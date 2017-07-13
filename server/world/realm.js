@@ -4,6 +4,7 @@
 const DB = require('./db');
 const Game = require('./game');
 
+const Response = require('./response');
 
 
 const Kinds = [
@@ -17,7 +18,11 @@ const Kinds = [
         damage: [1, 8],
         bodyparts: [ 'head', 'torso', 'arms', 'hands', 'legs', 'feet' ],
         attackmsgs: [
-            "<attack>You hit {opponent.title} with your fist"
+            new Response(
+                "<attack>You hit {dobj.title} with your fist",
+                "<defense>{player.title} hits you with their fist",
+                "<action>{player.title} hits {dobj.title} with their fist"
+            ),
         ],
     },
     {
@@ -28,6 +33,13 @@ const Kinds = [
         attack: 0,
         defense: 10,
         damage: [1, 8, 2],
+        attackmsgs: [
+            new Response(
+                "<attack>You slash {dobj.title} with your claws",
+                "<defense>{player.title} slashes you with their claws",
+                "<action>{player.title} slashes {dobj.title} with their claws"
+            ),
+        ],
     },
     {
         name: "Gnome",
@@ -45,6 +57,18 @@ const Kinds = [
         attack: 0,
         defense: 10,
         damage: [1, 4, 0],
+        attackmsgs: [
+            new Response(
+                "<attack>You hit {dobj.title} with your fist",
+                "<defense>{player.title} hits you with their fist",
+                "<action>{player.title} hits {dobj.title} with their fist"
+            ),
+            new Response(
+                "<attack>You kick {dobj.title}",
+                "<defense>{player.title} kicks you",
+                "<action>{player.title} kicks {dobj.title}"
+            ),
+        ],
     },
     {
         name: "Goat",
@@ -54,6 +78,13 @@ const Kinds = [
         attack: 0,
         defense: 10,
         damage: [1, 4, 0],
+        attackmsgs: [
+            new Response(
+                "<attack>You hit {dobj.title} with your hoof",
+                "<defense>{player.title} hits you with their hoof",
+                "<action>{player.title} hits {dobj.title} with their hoof"
+            ),
+        ],
     },
 ];
 
@@ -89,7 +120,7 @@ function reinitRealmObjects(id) {
     realm.classes = Classes;
 
     let goat = DB.get_object(id++) || realm.create_npc({ kind: 'Goat', class: 'Fighter' });
-    goat.name = 'A Goat';
+    goat.name = 'a goat';
     goat.body.state = 'alive';
     goat.body.hp = goat.body.maxhp;
     goat.body.respawntime = 300000;
@@ -99,6 +130,11 @@ function reinitRealmObjects(id) {
     let sword = DB.get_object(id++) || new DB.Classes.WieldableItem();
     sword.name = 'sword';
     sword.damage = [1, 8, 1];
+    sword.attackmsgs = [ new Response(
+        "<attack>You slice {dobj.title} with your sword",
+        "<defense>{player.title} slices you with their sword",
+        "<action>{player.title} slices {dobj.title} with their sword"
+    )];
     sword.moveto(DB.get_object(52), 'force');
 
     let bag = DB.get_object(id++) || new DB.Classes.Container();

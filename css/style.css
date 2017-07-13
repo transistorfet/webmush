@@ -239,3 +239,13 @@ img.image-preview.big {
     transition: max-height 0.5s ease-in-out;
 }
 
+
+.flash {
+    animation: fade-in 1.5s;
+}
+
+@keyframes fade-in {
+    from { background-color: #f00; }
+    to { }
+}
+

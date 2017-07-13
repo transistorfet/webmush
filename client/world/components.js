@@ -164,7 +164,7 @@ const WorldViewContents = {
         return m('table', { class: 'contents' }, vnode.attrs.contents.map(function (item) {
             return m('tr', [
                 m('td', Media.SmallIcon.call(this, item.icon)),
-                m('td', m('a', { onclick: World.look.bind(World, item.name) }, item.brief ? item.brief : item.title)),
+                m('td', m('a', { onclick: World.look.bind(World, item.name) }, (item.brief ? item.brief : item.title).capitalize())),
                 m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: item })),
                 item.typing ? m('img', { class: 'small-icon', src: '/media/default/img/indicator.gif' }) : '',
             ]);

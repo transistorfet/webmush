@@ -71,8 +71,12 @@ Thing.prototype.description = "You aren't sure what it is.";
 class Being extends Thing {
     initialize(options) {
         super.initialize(options);
-        this.canfollow = false;
+
         this.following = null;
+
+        if (options.$mode == 'new') {
+            this.canfollow = false;
+        }
     }
 
     get title() { return this.fullname || this.name; }
@@ -213,6 +217,7 @@ class Player extends CorporealBeing {
 
     initialize(options) {
         super.initialize(options);
+
         this.isWizard = false;
         this.position = 'standing';
         this.canfollow = true;
@@ -501,6 +506,7 @@ Player.allPlayers = [ ];
 class Room extends Thing {
     initialize(options) {
         super.initialize(options);
+
         this.exits = [ ];
         this.locked = false;
     }
@@ -718,9 +724,12 @@ class Room extends Thing {
 class Exit extends Thing {
     initialize(options) {
         super.initialize(options);
-        this.source = null;
-        this.dest = null;
-        this.hasDoor = false;
+
+        if (options.$mode == 'new') {
+            this.source = null;
+            this.dest = null;
+            this.hasDoor = false;
+        }
         this.isOpen = true;
     }
 
@@ -815,7 +824,8 @@ Exit.prototype.msg_arrive_others    = "{player.title} enters from the {direction
 
 class Item extends Thing {
 
-    get title() { return Utils.properName(this.name).capitalizeAll(); }
+    //get title() { return Utils.properName(this.name).capitalizeAll(); }
+    get title() { return Utils.properName(this.name); }
 
     verbs_for(player, all) {
         let verbs = super.verbs_for(player, all);

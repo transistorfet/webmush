@@ -10,10 +10,8 @@ const Error = require('../error');
 
 class Root {
     constructor(options) {
-        if (!options)
-            options = { };
-        if (!options.$mode)
-            options.$mode = 'new';
+        options = options || { };
+        options.$mode = options.$mode || 'new';
 
         DB.set_object(options.$id !== undefined ? options.$id : undefined, this);
         if (!options.$noinit)
@@ -184,7 +182,8 @@ class Root {
         // do nothing
     }
 
-    get title() { if (typeof this.name === 'string') return this.name.capitalize(); return ''; }
+    //get title() { if (typeof this.name === 'string') return this.name.capitalize(); return ''; }
+    get title() { return this.name; }
     set title(t) { this.name = t; }
 
     get_view(player) {

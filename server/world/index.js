@@ -7,7 +7,6 @@ const Root = require('./root');
 const Basic = require('./basic');
 const Game = require('./game');
 
-
 /*
 let InitialObjects = {
     Root,

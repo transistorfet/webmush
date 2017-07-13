@@ -1,13 +1,31 @@
 
-* there might be an issue with cloning and initialization... maybe you want to check and not change values for most things in case of clone, only new/load
-
+* is capitalize() too slow/intensive?
 * you need to deal with the capitals/lower case thing.  Either names must be lowercase, or names should be made lowercase for action log messages
+* should all references to title be replace with name in log msgs? and title would only be used for room contents, details box title, etc
+* should Response always use the location to format messages? So 'this' is always the location, rather than being player or dobj
+
+* add (optional) 'missed' responses to attack messages? How would it look up the default response if no zero damage response is set
 * the text for moving from room to room is totally messed up if it's not the typical exits
-* custom messages for attacking, look at lpmud/discworld code
+
+* who/where commands, map objects
+* you can add templates to lib/templates/*.js which contain a function which can either be loaded by the client or sent to the client as a string by
+  the server.  The who/where info could be displayed as a table in the details pane with a custom template that displays the data as a table
+
+* add a highlight to the exit from which the player last entered?
+
+* lowely wasn't able to pick up the sword, i think wizzy was still wielding it even though they weren't holding it
+* custom messages for attacking, look at lpmud/discworld code; maybe different levels of damage as well?
+
+* maybe kinds should be inheritable objects to allow defaults, like default attacks for all humanoid classes; setPrototype might be good enough,
+  as long as it saves properly in the realmutils object
 
 * you need an automatic way of update data on the clients, maybe a pub/sub thing?  but can we avoid using an external db/mqtt broker?
 * when you change a value of an object in details, it doesn't update the details view, even though the value changed
 * add builder permissions, so they can build but not do anything (how will permissions work?)
+
+* clone command should move new object somewhere by default? otherwise it's nowhere
+* is there or should there be a command to get a list of properties on an object, when wizard?
+
 
 
 
@@ -66,6 +84,8 @@
 
 ISSUES:
     * is the typing indicator too performance heavy?  Can it be dampened?  I'm worried that high traffic use would overload the server unless throttled
+    * there is an issue with bodies and loading, which creates a duplicate body.  Since bodies don't have IDs, they are duplicated during attribute assignment
+      Right now, it filters out owner-less bodies, but an alternative would be to make bodies into normal objects again... But then the contents issue/su to body
 
 
 COMMANDS:

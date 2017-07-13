@@ -4,6 +4,7 @@
 const DB = require('./db');
 const Root = require('./root');
 const Basic = require('./basic');
+const Response = require('./response');
 
 const Strings = require('../../lib/strings');
 
@@ -240,6 +241,13 @@ class Body {
         };
     }
 
+    kindinfo() {
+        return this.gameutils.kinds.find((kind) => { return kind.name == this.kind });
+    }
+
+    classinfo() {
+        return this.gameutils.classes.find((cls) => { return cls.name == this.class });
+    }
 
     timestep() {
         // TODO do... things...
@@ -251,7 +259,7 @@ class Body {
     }
 
     make_stats(kindname, classname) {
-        let kind = this.gameutils.kinds.find((kind) => { return kind.name == kindname });
+        let kind = this.kindinfo();
         return {
             str: GameUtils.roll(3, 6),
             dex: GameUtils.roll(3, 6),
@@ -461,7 +469,7 @@ class Body {
             this.state = 'alive';
 
             args.player.tell(args.player.format("<action>You spring back to life.", args));
-            args.player.location.tell_all_but(args.player, args.player.format("<action>{player.title} springs back to life.", args));
+            args.player.location.tell_all_but(args.player, args.player.format("<action>{player.title} springs back to life.", args).capitalize());
 
             args.player.update_view('player,body');
             args.player.location.update_contents();
@@ -508,14 +516,11 @@ Body.list = [ ];
 
     // TODO could you call a timestep function on the player character, as well as the room, and monsters, etc; so they can move
 
+    Body.list = Body.list.filter((body) => { return body.owner && body.owner.body == body });
+
     let fightingBodies = [ ];
     for (let i = 0; i < Body.list.length; i++) {
         let body = Body.list[i];
-        if (!body.owner) {
-            // if the owner is null, the body has been deleted and should be removed, and we also need to patch the loop index
-            delete Body.list[i--];
-            continue;
-        }
 
         let changed = body.timestep();
         if (changed && !body.fighting && body.owner)
@@ -528,7 +533,7 @@ Body.list = [ ];
 
         if (!(body.owner instanceof Basic.Player) && body.state == 'dead' && body.respawntime && (body.lastdeath + body.respawntime < start)) {
             body.state = 'alive';
-            body.owner.location.tell_all_but(null, body.owner.format("<action>{this.title} springs back to life."));
+            body.owner.location.tell_all_but(null, body.owner.format("<action>{this.title} springs back to life.").capitalize());
             body.owner.location.update_contents();
         }
     }
@@ -541,24 +546,34 @@ Body.list = [ ];
         let opponentbody = body.fighting ? body.fighting.body : null;
 
         // the fight might end before this character got a turn to hit
-        if (!opponentbody)
+        if (!body || !opponentbody)
             continue;
+
+        if (body.wielding && body.wielding.location != body.owner)
+            body.wielding = null;
 
         let damage = body.attack_opponent(opponentbody);
 
         // TODO move this to gameutils?
         if (damage <= 0) {
-            body.owner.tell(body.owner.format("<attack>You MISSED {owner.title}!?", opponentbody));
-            opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} MISSED you!", body));
+            new Response(
+                "<attack>You MISSES {dobj.title}!?",
+                "<defense>{player.title} MISSES you!",
+                "<action>{player.title} MISSES {dobj.title}!"
+            ).tell_all({ player: body.owner, dobj: opponentbody.owner });
         }
         else if (opponentbody.hp > 0) {
-            body.owner.tell(body.owner.format("<attack>You hit {owner.title} with your fist", opponentbody));
-            opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} hits you with their fist!", body));
+            let weapon = body.wielding ? body.wielding : body.kindinfo();
+            let response = weapon.attackmsgs[Math.floor(Math.random() * weapon.attackmsgs.length)];
+            response.tell_all({ player: body.owner, dobj: opponentbody.owner });
         }
         else {
             // TODO i'm using name here instead of title because it would say Ghost of soandso... maybe should do win/die after this??
-            body.owner.tell(body.owner.format("<attack>You KILLED {owner.name}!!! How could you!?", opponentbody));
-            opponentbody.owner.tell(opponentbody.owner.format("<defense>{owner.title} has killed you... you are now dead", body));
+            new Response(
+                "<attack>You KILLED {dobj.name}!!! How could you!?",
+                "<defense>{dobj.title} has killed you... you are now dead",
+                "<action>{player.title} KILLS {dobj.name}!"
+            ).tell_all({ player: body.owner, dobj: opponentbody.owner });
         }
 
         opponentbody.owner.update_view('body');
@@ -576,7 +591,10 @@ Body.list = [ ];
 class BodyItem extends Basic.Item {
     initialize(options) {
         super.initialize(options);
-        this.owner = options.owner;
+
+        if (options.$mode == 'new') {
+            this.owner = options.owner;
+        }
     }
 
     //do_verb_for() {
@@ -599,7 +617,10 @@ class BodyItem extends Basic.Item {
 class WeightedItem extends Basic.Item {
     initialize(options) {
         super.initialize(options);
-        this.weight = 0;
+
+        if (options.$mode == 'new') {
+            this.weight = 0;
+        }
     }
 
     moveable(to, by) {
@@ -650,7 +671,10 @@ class WearableItem extends WeightedItem {
 class WieldableItem extends WeightedItem {
     initialize(options) {
         super.initialize(options);
-        this.damage = [ 1, 4, 0 ];
+
+        if (options.$mode == 'new') {
+            this.damage = [ 1, 4, 0 ];
+        }
     }
 
     editable_by(player) {
@@ -716,6 +740,7 @@ class DrinkableItem extends WeightedItem {
 class Corpse extends WeightedItem {
     initialize(options) {
         super.initialize(options);
+
         this.weight = 100;      // TODO calculate from kind info?
         Corpse.list.push(this);
     }
@@ -737,7 +762,7 @@ class Corpse extends WeightedItem {
     static make_for(body) {
         let corpse = new Corpse();
         corpse.owner = body.owner;
-        corpse.name = 'Corpse of ' + body.owner.name;
+        corpse.name = 'the corpse of ' + body.owner.name;
         corpse.timeofdeath = Date.now();
         let items = body.owner.contents.filter((obj) => { return obj instanceof WeightedItem; });
         items.map(function (obj) {
@@ -754,7 +779,7 @@ Corpse.list = [ ];
     Corpse.list = Corpse.list.filter(function (corpse) {
         if (start - corpse.timeofdeath > 3600000) {
             // TODO move items to the lost and found??
-            corpse.location.tell_all_but(null, corpse.format("{this.name} decays into dust."));
+            corpse.location.tell_all_but(null, corpse.format("{this.name} decays into dust.").capitalize());
             corpse.recycle();
             return false;
         }
@@ -770,7 +795,10 @@ Corpse.list = [ ];
 class VendingMachine extends Basic.Thing {
     initialize(options) {
         super.initialize(options);
-        this.items = [ ];
+
+        if (options.$mode == 'new') {
+            this.items = [ ];
+        }
     }
 
     moveable(to, by) {
