@@ -24,15 +24,15 @@ class Response {
 
     tell_all(args) {
         if (this.first)
-            args.player.tell(args.player.format(this.first, args).capitalize());
+            args.player.tell(args.player.location.format(this.first, args).capitalize());
         if (this.second && args.dobj)
-            args.dobj.tell(args.dobj.format(this.second, args).capitalize());
+            args.dobj.tell(args.player.location.format(this.second, args).capitalize());
 
         let excludes = [ ];
         if (this.third) {
             if (this.first) excludes.push(args.player);
             if (this.second) excludes.push(args.dobj);
-            args.player.location.tell_all_but(excludes, args.player.format(this.third, args).capitalize());
+            args.player.location.tell_all_but(excludes, args.player.location.format(this.third, args).capitalize());
         }
     }
 }

@@ -100,7 +100,7 @@ class Root {
             return this.location;
 
         let m;
-        if (m = name.match(/^#(\d+)$/))
+        if (m = name.match(/^#(\w+)$/))
             return DB.get_object(m[1]);
 
         for (let i = 0; i < this.contents.length; i++) {

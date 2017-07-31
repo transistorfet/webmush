@@ -290,7 +290,7 @@ const DB = {
     },
 
     next_id() {
-        return Math.max.apply(null, Object.keys(Objects)) + 1;
+        return Math.max.apply(null, Object.keys(Objects).filter((key) => { return !isNaN(key); })) + 1;
     },
 /*
     next_id() {
@@ -355,10 +355,9 @@ const DB = {
     },
 
     makeObject(data, recurse) {
-        let id = parseInt(data['id']);
-        //let tid = parseInt(data['$type']);
+        let id = data['id'];
         let typename = data['$type'];
-        let pid = data['$prototype'] ? parseInt(data['$prototype']) : null;
+        let pid = data['$prototype'] ? data['$prototype'] : null;
         if (!(typename in DB.Classes))
             throw "Load Error: Unable to load object with unregistered class " + typename;
 
