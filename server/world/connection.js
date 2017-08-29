@@ -5,6 +5,8 @@ const DB = require('./db');
 const Root = require('./root');
 const Error = require('../error');
 
+const Templates = require('../../lib/templates');
+
 
 class Connection {
     constructor(ws) {
@@ -139,6 +141,11 @@ const onMsg = function (ws, msg)
         catch (e) {
             catchError(e, args.player, msg.seq);
         }
+    }
+    else if (msg.type == 'template') {
+        var template = Templates.get(msg.name);
+        if (template)
+            args.player.tell_msg({ type: 'template', name: msg.name, template: template.toString() });
     }
     else if (msg.type == 'get') {
         if (msg.section == 'prefs') {

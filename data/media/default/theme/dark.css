@@ -33,6 +33,11 @@ a:visited {
     color: #30b030;
 }
 
+#world-area .viewbox:not(.styled) .exit {
+    color: #c00404;
+}
+
+
 #world-logs .status {
     color: #660066;
 }

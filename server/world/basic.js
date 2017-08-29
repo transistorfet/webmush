@@ -6,6 +6,7 @@ const Utils = require('./utils');
 
 const DB = require('./db');
 const Root = require('./root');
+const Response = require('./response');
 
 
 class Thing extends Root {
@@ -314,8 +315,6 @@ class Player extends CorporealBeing {
             msg.location = this.location.get_view(this);
         if (this.body && (!section || section.match(/(^|,)body(,|$)/)))
             msg.body = this.body.get_view(this);
-        if (this.body && (!section || section.match(/(^|,)body-template(,|$)/)))
-            msg.body_template = this.body.get_template(this).toString();
         this.tell_msg(msg);
     }
 
@@ -962,6 +961,54 @@ Container.prototype.msg_put_success_you     = "<action>You put {dobj.title} into
 Container.prototype.msg_put_success_others  = "<action>{player.name} puts {dobj.title} into {this.title}";
 
 
+class Channel extends Root {
+    initialize(options) {
+        super.initialize(options);
+        Channel.list.push(this);
+        this.users = [ ];
+    }
+
+    // TODO a channel that people can join to get messages sent to the group... it would need /join /leave /msg? how would the interpreter know where to find the verbs
+    verbs_for(player, all) {
+        let verbs = super.verbs_for(player, all);
+        verbs.push('join|this', 'leave/part|this', 'msg', 'list');
+        return verbs;
+    }
+
+    join(args) {
+        if (this.users.indexOf(args.player) >= 0)
+            args.player.tell("You are already listening to #" + this.id);
+        else {
+            this.users.push(args.player);
+            args.player.tell("You are now listening to #" + this.id);
+        }
+    }
+
+    leave(args) {
+        this.users = this.users.filter((user) => { return user != args.player; });
+        args.player.tell("You are no longer listening to #" + this.id);
+    }
+
+    msg(args) {
+        let text = args.text;
+        // TODO remove things from it
+
+        this.users.forEach((user) => {
+            //if (user != args.player)
+                user.tell(this.format("<chat><{player.name}:#{this.id}> {text}", args));
+        });
+    }
+
+    list(args) {
+        args.player.tell("All Channels:");
+        Channel.list.forEach((channel) => {
+            args.player.tell(this.format("#{this.id}:  {this.name} - {this.description}"));
+        });
+    }
+}
+Channel.list = [ ];
+
+
  
 module.exports = {
     Thing,
@@ -973,5 +1020,6 @@ module.exports = {
     Item,
     UseableItem,
     Container,
+    Channel,
 };
 

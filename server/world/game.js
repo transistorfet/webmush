@@ -7,6 +7,8 @@ const Basic = require('./basic');
 const Response = require('./response');
 
 const Strings = require('../../lib/strings');
+const Templates = require('../../lib/templates');
+
 
 const GenericKind = {
     name: "Generic Kind",
@@ -132,6 +134,7 @@ class GameUtils extends Root {
 
 
 
+
 /*
 attack
 defense
@@ -154,6 +157,70 @@ add all effects to base stats to get current stats
 */
 
 
+Templates.set('GameBodyDetails', function (body)
+{
+    return [
+        m('div', { }, body.state + ' and ' + body.stance),
+        m('div', { class: 'column-display' }, [
+            m('table', [
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "Kind:"),
+                    // TODO fix this link to get info on your kind, displayed in the details window maybe?  the details window might have to become more generic
+                    m('td', m('a', { onclick: World.info.bind(World, body.kind) }, body.kind)),
+                    m('td', { class: 'tinylabel' }, "Class:"),
+                    m('td', m('a', { onclick: World.info.bind(World, body.class) }, body.class)),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "HP:"),
+                    m('td', body.hp + " / " + body.maxhp),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "Level:"),
+                    m('td', body.level),
+                    m('td', { class: 'tinylabel' }, "XP:"),
+                    m('td', body.xp),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "You're fighting:"),
+                    m('td', body.fighting),
+                ]),
+            ]),
+            m('table', [
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "STR:"),
+                    m('td', body.str),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "DEX:"),
+                    m('td', body.dex),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "INT:"),
+                    m('td', body.int),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "WIS:"),
+                    m('td', body.wis),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "CON:"),
+                    m('td', body.con),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "CHA:"),
+                    m('td', body.cha),
+                ]),
+                m('tr', [
+                    m('td', { class: 'tinylabel' }, "Luck:"),
+                    m('td', body.luck),
+                ]),
+            ]),
+        ]),
+    ];
+});
+
+
+
 class Body {
     constructor(options) {
         if (!options) {
@@ -171,7 +238,6 @@ class Body {
     initialize(options) {
         if (options.$mode == 'load')
             return;
-        // TODO this is for when you create a new object and want to specify how to initialize it;
         this.kind = options.kind;
         this.class = options.class;
 
@@ -202,6 +268,7 @@ class Body {
     get_view(player) {
         //let view = super.get_view(player);
         let view = { };
+        view.template = "GameBodyDetails";
         view.kind = this.kind;
         view.class = this.class;
         view.state = this.state;
@@ -219,73 +286,6 @@ class Body {
         view.luck = this.base_stats.luck;
         view.fighting = this.fighting ? this.fighting.name : 'nobody';
         return view;
-    }
-
-    get_template(player) {
-        // TODO are there dangers of this?
-        if (player != this && player != this.owner)
-            return 'probably wrong';
-
-        return function (body) {
-            return [
-                m('div', { }, body.state + ' and ' + body.stance),
-                m('div', { class: 'column-display' }, [
-                    m('table', [
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "Kind:"),
-                            // TODO fix this link to get info on your kind, displayed in the details window maybe?  the details window might have to become more generic
-                            m('td', m('a', { onclick: World.info.bind(World, body.kind) }, body.kind)),
-                            m('td', { class: 'tinylabel' }, "Class:"),
-                            m('td', m('a', { onclick: World.info.bind(World, body.class) }, body.class)),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "HP:"),
-                            m('td', body.hp + " / " + body.maxhp),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "Level:"),
-                            m('td', body.level),
-                            m('td', { class: 'tinylabel' }, "XP:"),
-                            m('td', body.xp),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "You're fighting:"),
-                            m('td', body.fighting),
-                        ]),
-                    ]),
-                    m('table', [
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "STR:"),
-                            m('td', body.str),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "DEX:"),
-                            m('td', body.dex),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "INT:"),
-                            m('td', body.int),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "WIS:"),
-                            m('td', body.wis),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "CON:"),
-                            m('td', body.con),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "CHA:"),
-                            m('td', body.cha),
-                        ]),
-                        m('tr', [
-                            m('td', { class: 'tinylabel' }, "Luck:"),
-                            m('td', body.luck),
-                        ]),
-                    ]),
-                ]),
-            ];
-        };
     }
 
     kindinfo() {
@@ -482,8 +482,8 @@ class Body {
             // TODO after initial attack, assuming player gets initiative, do they run away?
             args.dobj.body.fighting = args.player;
 
-            args.player.tell(args.player.format("<action>You start fighting {dobj.title}.", args));
-            args.dobj.tell(args.dobj.format("<action>{player.title} start fighting you!", args));
+            args.player.tell(args.player.location.format("<action>You start fighting {dobj.title}.", args));
+            args.dobj.tell(args.player.location.format("<action>{player.title} start fighting you!", args));
             args.player.location.tell_all_but([ args.player, args.dobj ], args.player.location.format("<action>{player.title} start fighting {dobj.title}!", args));
 
             args.player.update_view('location');
@@ -500,9 +500,9 @@ class Body {
             // TODO check if opponent stops fighting
             opponent.body.fighting = null;
 
-            args.player.tell(args.player.format("<action>You flee from the fight.", args));
-            opponent.tell(opponent.format("<action>{player.title} runs away!", args));
-            args.player.location.tell_all_but([ args.player, opponent ], args.player.format("<action>{this.title} runs away from {title}!", opponent));
+            args.player.tell(args.player.location.format("<action>You flee from the fight.", args));
+            opponent.tell(args.player.location.format("<action>{player.title} runs away!", args));
+            args.player.location.tell_all_but([ args.player, opponent ], args.player.location.format("<action>{player.title} runs away from {opponent.title}!", { player: args.player, opponent: opponent }));
 
             args.player.update_view('location');
         }
@@ -515,8 +515,10 @@ class Body {
             // TODO this is temporary; it should transfer you to heaven or something, or punish you somehow for dying
             this.state = 'alive';
 
-            args.player.tell(args.player.format("<action>You spring back to life.", args));
-            args.player.location.tell_all_but(args.player, args.player.format("<action>{player.title} springs back to life.", args).capitalize());
+            args.player.tell(args.player.location.format("<action>You spring back to life.", args));
+            args.player.location.tell_all_but(args.player, args.player.location.format("<action>{player.title} springs back to life.", args).capitalize());
+        new Response(
+        ).tell_all(args);
 
             args.player.update_view('player,body');
             args.player.location.update_contents();
@@ -527,8 +529,13 @@ class Body {
     sit(args) {
         this.stance = 'sitting';
 
-        args.player.tell("<action>You sit down on the ground.");
-        args.player.location.tell_all_but(args.player, Strings.format("<action>{player.name} sits down on the ground.", args));
+        //args.player.tell("<action>You sit down on the ground.");
+        //args.player.location.tell_all_but(args.player, Strings.format("<action>{player.name} sits down on the ground.", args));
+        new Response(
+            "<action>You sit down on the ground.",
+            "<action>{player.name} sits down on the ground."
+        ).tell_all(args);
+
         if (this.owner) {
             this.owner.update_view('player,body');
             if (this.owner.location);
@@ -539,8 +546,13 @@ class Body {
     stand(args) {
         this.stance = 'standing';
 
-        args.player.tell("<action>You stand up.");
-        args.player.location.tell_all_but(args.player, Strings.format("<action>{player.name} stands up.", args));
+        //args.player.tell("<action>You stand up.");
+        //args.player.location.tell_all_but(args.player, Strings.format("<action>{player.name} stands up.", args));
+        new Response(
+            "<action>You stand up.",
+            "<action>{player.name} stands up."
+        ).tell_all(args);
+
         if (this.owner) {
             this.owner.update_view('player,body');
             if (this.owner.location);
@@ -603,11 +615,7 @@ Body.list = [ ];
 
         // TODO move this to gameutils?
         if (damage <= 0) {
-            new Response(
-                "<attack>You MISSES {dobj.title}!?",
-                "<defense>{player.title} MISSES you!",
-                "<action>{player.title} MISSES {dobj.title}!"
-            ).tell_all({ player: body.owner, dobj: opponentbody.owner });
+            body.gameutils.respond_missed.tell_all({ player: body.owner, dobj: opponentbody.owner });
         }
         else if (opponentbody.hp > 0) {
             let weapon = body.wielding ? body.wielding : body.kindinfo();
@@ -615,12 +623,7 @@ Body.list = [ ];
             response.tell_all({ player: body.owner, dobj: opponentbody.owner });
         }
         else {
-            // TODO i'm using name here instead of title because it would say Ghost of soandso... maybe should do win/die after this??
-            new Response(
-                "<attack>You KILLED {dobj.name}!!! How could you!?",
-                "<defense>{dobj.title} has killed you... you are now dead",
-                "<action>{player.title} KILLS {dobj.name}!"
-            ).tell_all({ player: body.owner, dobj: opponentbody.owner });
+            body.gameutils.respond_killed.tell_all({ player: body.owner, dobj: opponentbody.owner });
         }
 
         opponentbody.owner.update_view('body');
@@ -631,6 +634,17 @@ Body.list = [ ];
     setTimeout(TimeCycle, Math.max(8000 - (Date.now() - start), 3000));
 })();
 
+GameUtils.prototype.respond_missed = new Response(
+    "<attack>You MISSED {dobj.name}!?",
+    "<defense>{player.name} MISSES you!",
+    "<action>{player.name} MISSES {dobj.name}!"
+);
+
+GameUtils.prototype.respond_killed = new Response(
+    "<attack>You KILLED {dobj.name}!!! How could you!?",
+    "<defense>{dobj.name} has killed you... you are now dead",
+    "<action>{player.name} KILLS {dobj.name}!"
+)
 
 
 

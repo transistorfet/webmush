@@ -5,6 +5,8 @@ require('../css/normalize.css');
 require('../css/style.css');
 require('../css/navbar.css');
 
+require('./templates');
+
 
 const m = require('mithril');
 

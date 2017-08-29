@@ -19,9 +19,9 @@ const Kinds = [
         bodyparts: [ 'head', 'torso', 'arms', 'hands', 'legs', 'feet' ],
         attackmsgs: [
             new Response(
-                "<attack>You hit {dobj.title} with your fist",
-                "<defense>{player.title} hits you with their fist",
-                "<action>{player.title} hits {dobj.title} with their fist"
+                "<attack>You hit {dobj.name} with your fist",
+                "<defense>{player.name} hits you with their fist",
+                "<action>{player.name} hits {dobj.name} with their fist"
             ),
         ],
     },
@@ -35,9 +35,9 @@ const Kinds = [
         damage: [1, 8, 2],
         attackmsgs: [
             new Response(
-                "<attack>You slash {dobj.title} with your claws",
-                "<defense>{player.title} slashes you with their claws",
-                "<action>{player.title} slashes {dobj.title} with their claws"
+                "<attack>You slash {dobj.name} with your claws",
+                "<defense>{player.name} slashes you with their claws",
+                "<action>{player.name} slashes {dobj.name} with their claws"
             ),
         ],
     },
@@ -59,14 +59,14 @@ const Kinds = [
         damage: [1, 4, 0],
         attackmsgs: [
             new Response(
-                "<attack>You hit {dobj.title} with your fist",
-                "<defense>{player.title} hits you with their fist",
-                "<action>{player.title} hits {dobj.title} with their fist"
+                "<attack>You hit {dobj.name} with your fist",
+                "<defense>{player.name} hits you with their fist",
+                "<action>{player.name} hits {dobj.name} with their fist"
             ),
             new Response(
-                "<attack>You kick {dobj.title}",
-                "<defense>{player.title} kicks you",
-                "<action>{player.title} kicks {dobj.title}"
+                "<attack>You kick {dobj.name}",
+                "<defense>{player.name} kicks you",
+                "<action>{player.name} kicks {dobj.name}"
             ),
         ],
     },
@@ -80,9 +80,9 @@ const Kinds = [
         damage: [1, 4, 0],
         attackmsgs: [
             new Response(
-                "<attack>You hit {dobj.title} with your hoof",
-                "<defense>{player.title} hits you with their hoof",
-                "<action>{player.title} hits {dobj.title} with their hoof"
+                "<attack>You hit {dobj.name} with your hoof",
+                "<defense>{player.name} hits you with their hoof",
+                "<action>{player.name} hits {dobj.name} with their hoof"
             ),
         ],
     },

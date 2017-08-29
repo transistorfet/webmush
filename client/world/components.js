@@ -4,6 +4,7 @@
 const m = require('mithril');
 
 const Strings = require('../../lib/strings');
+const Templates = require('../../lib/templates');
 
 const View = require('../views');
 const World = require('./model');
@@ -73,7 +74,7 @@ const WorldView = {
             m(WorldViewLocation, { location: vnode.attrs.view.location }),
             vnode.attrs.prompt ? m(View.Box, { class: 'prompt-info slide-down' }, vnode.attrs.prompt.render()) : '',
             vnode.attrs.view.details ? m(WorldViewDetails, { details: vnode.attrs.view.details }) : '',
-            m(WorldViewPlayer, { player: vnode.attrs.view.player, body: vnode.attrs.view.body, body_template: vnode.attrs.view.body_template }),
+            m(WorldViewPlayer, { player: vnode.attrs.view.player, body: vnode.attrs.view.body }),
         ];
     },
 };
@@ -94,7 +95,7 @@ const WorldViewLocation = {
                 m('span', { class: 'tinylabel' }, "Exits"),
                 m('table', { class: 'exits' }, vnode.attrs.location.exits.map(function (exit) {
                     return m('tr', [
-                        m('td', m('a', { onclick: World.go.bind(World, exit.name) }, exit.name)),
+                        m('td', m('a', { class: 'exit', onclick: World.go.bind(World, exit.name) }, exit.name)),
                         m('td', exit.title),
                         m('td', { class: 'tinylabel' }, m(WorldVerbList, { item: exit })),
                     ]);
@@ -120,7 +121,7 @@ const WorldViewPlayer = {
                 m('span', { class: 'tinylabel' }, "You are carrying"),
                 m(WorldViewContents, { contents: vnode.attrs.player.contents }),
                 //m('span', { class: 'tinylabel' }, "Your status is"),
-                m(WorldViewPlayerBody, { body: vnode.attrs.body, body_template: vnode.attrs.body_template }),
+                m(WorldViewPlayerBody, { body: vnode.attrs.body }),
             ])
         );
     },
@@ -134,7 +135,7 @@ const WorldViewPlayerBody = {
         return (
             m(View.Box, { class: 'body', borderless: true }, [
                 m('span', { class: 'tinylabel' }, "You're body is"),
-                vnode.attrs.body_template ? vnode.attrs.body_template(vnode.attrs.body) : '(template missing)',
+                Templates.render(vnode.attrs.body.template, vnode.attrs.body),
             ])
         );
     },
