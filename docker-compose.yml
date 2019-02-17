@@ -1,0 +1,11 @@
+version: '3'
+services:
+  webmush:
+    build: .
+    ports:
+     - "3000:3000"
+    volumes:
+      - objdata:/app/data
+volumes:
+  objdata:
+

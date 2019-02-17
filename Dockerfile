@@ -1,11 +1,12 @@
  
 FROM node:alpine
 
-WORKDIR /var/lib/app
-ADD . /var/lib/app
-VOLUME /var/lib/app/data
+WORKDIR /app
+COPY . /app
 
 RUN npm install && npm run build
+
+VOLUME /app/data
 
 EXPOSE 3000
 
